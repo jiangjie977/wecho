@@ -22,7 +22,6 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:window_manager/window_manager.dart';
 import 'l10n/app_localizations.dart';
 import 'views/dsp_controller_android.dart';
-import 'views/dsp_controller_windows.dart';
 import 'views/loading_screen.dart';
 import 'view_models/dsp_controller_view_model.dart';
 
@@ -81,10 +80,6 @@ class MyApp extends StatelessWidget {
   Widget _getPlatformHome() {
     if (kIsWeb) {
       return const DSPController();
-    }
-    
-    if (Platform.isWindows) {
-      return const DSPControllerWindows();
     }
     
     final viewModel = DSPControllerViewModel();

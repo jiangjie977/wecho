@@ -67,6 +67,11 @@ class _DSPControllerState extends State<DSPController> {
         );
       }
     });
+
+    _viewModel.initialized.then((_) {
+      if (!mounted) return;
+      _viewModel.startCaptureWorkflow();
+    });
   }
 
   @override
@@ -495,8 +500,8 @@ class _DSPControllerState extends State<DSPController> {
                 children: [
                   NeumorphicSlider(
                     label: l10n.virtualBassEnvelopeRate,
-                    value: clampDouble(_viewModel.get<int>(ParamID.virtualbassEffectEnvelopeRate).toDouble(), 5, 200),
-                    min: 5, max: 200, unit: 'Hz', divisions: 195,
+                    value: clampDouble(_viewModel.get<int>(ParamID.virtualbassEffectEnvelopeRate).toDouble(), 5, 150),
+                    min: 5, max: 150, unit: 'Hz', divisions: 145,
                     enabled: _viewModel.get<bool>(ParamID.virtualbassEffectEnabled),
                     onChanged: (v) => _viewModel.update(ParamID.virtualbassEffectEnvelopeRate, v.toInt()),
                   ),
@@ -518,8 +523,8 @@ class _DSPControllerState extends State<DSPController> {
                   ),
                   NeumorphicSlider(
                     label: l10n.virtualBassHarmonicGain,
-                    value: clampDouble(_viewModel.get<double>(ParamID.virtualbassEffectHarmonicGain), 1, 2),
-                    min: 1, max: 2, unit: '', divisions: 100,
+                    value: clampDouble(_viewModel.get<double>(ParamID.virtualbassEffectHarmonicGain), 0, 2),
+                    min: 0, max: 2, unit: '', divisions: 200,
                     decimalPlaces: 2,
                     enabled: _viewModel.get<bool>(ParamID.virtualbassEffectEnabled),
                     onChanged: (v) => _viewModel.update(ParamID.virtualbassEffectHarmonicGain, v),

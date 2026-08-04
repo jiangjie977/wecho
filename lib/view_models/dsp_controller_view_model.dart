@@ -76,8 +76,6 @@ class DSPControllerViewModel {
   String _lastDevice = '';
   Timer? _pollingTimer;
 
-  bool autoCommit = false;
-
   final Completer<void> _initCompleter = Completer<void>();
   Future<void> get initialized => _initCompleter.future;
 
@@ -107,29 +105,13 @@ class DSPControllerViewModel {
       return null;
     });
 
-    if (Platform.isWindows) {
-      await _invokeMethod('initAPOBridge');
-    }
-
     await _loadSettings();
   
     await _applyAllParams();
-
-    if (Platform.isWindows) {
-      await _invokeMethod('commitAPO');
-    }
-
-    autoCommit = true;
   
-    if (Platform.isAndroid) {
-      await requestShizukuPermission();
-      _startPolling();
-      await _fetchCaptureStatus();
-
-      if (!isCapturing) {
-        await _invokeMethod('startCapture');
-      }
-    }
+    await requestShizukuPermission();
+    _startPolling();
+    await _fetchCaptureStatus();
 
     _initCompleter.complete();
   }
@@ -465,10 +447,6 @@ class DSPControllerViewModel {
   
 
   Future<void> requestShizukuPermission() async {
-    if (!Platform.isAndroid) {
-      return;
-    }
-
     await _invokeMethod('requestShizukuPermission');
     onStateChanged?.call();
   }
@@ -480,10 +458,6 @@ class DSPControllerViewModel {
   }
 
   Future<void> _fetchCaptureStatus() async {
-    if (!Platform.isAndroid) {
-      return;
-    }
-
     final result = await _invokeMethodWithResult<bool>('getCaptureStatus');
     result.fold(
       (_) {},
@@ -495,10 +469,6 @@ class DSPControllerViewModel {
   }
 
   Future<void> setAutoOutputSwitch(bool enabled) async {
-    if (!Platform.isAndroid) {
-      return;
-    }
-    
     autoOutputSwitch = enabled;
     await _prefs.setBool('autoOutputSwitch', enabled);
     await _configManager.setAutoOutputSwitch(enabled);
@@ -520,10 +490,6 @@ class DSPControllerViewModel {
   }
 
   Future<void> _fetchAutoOutput() async {
-    if (!Platform.isAndroid) {
-      return;
-    }
-
     final result = await _invokeMethodWithResult<String>('getAutoOutput');
     result.fold(
       (_) {},
@@ -565,6 +531,17 @@ class DSPControllerViewModel {
     }
   }
 
+  /// Start the audio capture workflow once the first screen (splash + onboarding)
+  /// has finished loading. Re-syncs capture status, then requests the
+  /// MediaProjection consent + starts capture if not already capturing.
+  Future<void> startCaptureWorkflow() async {
+    await _fetchCaptureStatus();
+
+    if (!isCapturing) {
+      await _invokeMethod('startCapture');
+    }
+  }
+
   Future<void> setEffectParam(int paramId, dynamic value, {bool initialize = false}) async {
     dynamic finalValue = value;
     if (paramId == ParamID.iirEqualizerEffectCoeffs.index && value is List<IIREqualizerCoeffs>) {
@@ -574,35 +551,14 @@ class DSPControllerViewModel {
       finalValue = serializeScriptParams(value);
     }
 
-    if (Platform.isWindows) {
-      await _invokeMethod('setAPOEffectParam', {'paramId': paramId, 'value': finalValue});
-
-      if (autoCommit) {
-        await _invokeMethod('commitAPO');
-      }
-    } else if (Platform.isAndroid) {
-      await _invokeMethod('setEffectParam', {'paramId': paramId, 'value': finalValue, 'initialize': initialize});
-    }
+    await _invokeMethod('setEffectParam', {'paramId': paramId, 'value': finalValue, 'initialize': initialize});
   }
 
   Future<void> setMasterEnabled(bool enabled) async {
-    if (Platform.isWindows) {
-      await _invokeMethod('setAPOMasterEnabled', enabled);
-
-      if (autoCommit) {
-        await _invokeMethod('commitAPO');
-      }
-    } else if (Platform.isAndroid) {
-      await _invokeMethod('setMasterEnabled', enabled);
-    }
-
+    await _invokeMethod('setMasterEnabled', enabled);
   }
 
   Future<void> _fetchAppVersion() async {
-    if (!Platform.isAndroid) {
-      return;
-    }
-
     final result = await _invokeMethodWithResult<String>('getAppVersion');
     result.fold(
       (_) {},
@@ -614,7 +570,7 @@ class DSPControllerViewModel {
   }
 
   Future<void> loadInstalledApps() async {
-    if (!Platform.isAndroid) return;
+
     if (appsLoadState == AppsLoadState.loaded) return;
     appsLoadState = AppsLoadState.loading;
     onStateChanged?.call();
@@ -650,7 +606,6 @@ class DSPControllerViewModel {
   }
 
   Future<void> openAppDetailSettings() async {
-    if (!Platform.isAndroid) return;
     await _invokeMethod('openAppDetailSettings');
   }
 
@@ -801,9 +756,7 @@ class DSPControllerViewModel {
   Set<String> logLevels = {'wecho-kotlin', 'wecho-native', 'framework'};
   int logMaxCount = 100;
 
-  Future<List<Map<String, dynamic>>> getLogs() async {
-    if (!Platform.isAndroid) return [];
-    
+  Future<List<Map<String, dynamic>>> getLogs() async {    
     final tags = logLevels.toList();
     final result = await _invokeMethodWithResult<List>('getLogs', {'tags': tags, 'maxCount': logMaxCount});
     return result.fold(
@@ -821,9 +774,7 @@ class DSPControllerViewModel {
     );
   }
 
-  Future<void> setLogMaxCount(int count) async {
-    if (!Platform.isAndroid) return;
-    
+  Future<void> setLogMaxCount(int count) async {    
     logMaxCount = count;
     await _prefs.setInt('logMaxCount', count);
     onStateChanged?.call();
