@@ -52,12 +52,3 @@ pubspec.lock
 lib/l10n/app_localizations*.dart
 .qoder/
 .vscode/
-
-windows/sharedMemory/.vs
-windows/sharedMemory/x64
-windows/sharedMemory/sharedMemory
-
-windows/test/.vs
-windows/test/x64
-windows/test/test
-windows/test/*.pkf
