@@ -42,6 +42,7 @@ class WechoTileService : TileService() {
     }
 
     enum class EffectParam {
+        MASTER_ENABLED,
         GAIN_EFFECT_GAIN,
         BALANCE_EFFECT_BALANCE,
         BASS_EFFECT_ENABLED,
@@ -99,7 +100,7 @@ class WechoTileService : TileService() {
         Log.i(TAG, "WechoTileService onCreate")
         sharedPreferences = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         audioDeviceMonitor = AudioDeviceMonitor.getInstance(this)
-        audioProcess.init(this)
+        audioProcess.init(48000, 512, 2, this)
     }
 
     override fun onStartListening() {
@@ -192,7 +193,7 @@ class WechoTileService : TileService() {
     private fun applyConfigFromJson(json: String) {
         try {
             val config = org.json.JSONObject(json)
-            
+            config.optBoolean("dspEnabled", true).let { audioProcess.setEffectParam(EffectParam.MASTER_ENABLED.ordinal, it, true) }
             config.optDouble("gainEffectGain", 0.0).let { audioProcess.setEffectParam(EffectParam.GAIN_EFFECT_GAIN.ordinal, it, true) }
             config.optDouble("balanceEffectBalance", 0.0).let { audioProcess.setEffectParam(EffectParam.BALANCE_EFFECT_BALANCE.ordinal, it, true) }
             

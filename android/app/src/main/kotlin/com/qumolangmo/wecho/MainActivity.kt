@@ -243,7 +243,7 @@ class MainActivity : FlutterActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         mediaProjectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
-        AudioProcess.getInstance().init(this)
+        AudioProcess.getInstance().init(48000, 512, 2, this)
         audioDeviceMonitor = AudioDeviceMonitor.getInstance(this)
         requestRuntimePermissions()
     }

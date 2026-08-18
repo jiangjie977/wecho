@@ -215,6 +215,7 @@ List<ScriptParam> parseScriptParams(String code) {
 }
 
 enum ParamID {
+  dspEnabled(bool),
   gainEffectGain(double),
   balanceEffectBalance(double),
   bassEffectEnabled(bool),
@@ -269,23 +270,14 @@ enum ParamID {
 
 const String kDefaultScriptCode = '''
 // @desc: wecho dsp template code (don't override this code)
-#ifndef SAMPLE_RATE
-#define SAMPLE_RATE 48000
-#endif
-
-#ifndef SAMPLES_PER_CHANNEL
-#define SAMPLES_PER_CHANNEL 512
-#endif
-
-#ifndef PARAM
-#define PARAM(name, min, max, step, value, display_name) float name = value;
-#endif
-
 float ll = 0, rr = 0;
 
 PARAM(gain, 0, 1.8, 0.1, 1.0, "增益");
 
 Biquad_ hp_l, hp_r;
+
+const int sample_rate = SAMPLE_RATE;
+const int samples_per_channel = SAMPLES_PER_CHANNEL;
 
 void setParams(ScriptParams* params) {
     gain = params[0].value;
@@ -300,7 +292,7 @@ void setParams(ScriptParams* params) {
 }
 
 void run(float* in_l, float* in_r, float* out_l, float* out_r) {
-    for (int i = 0; i < SAMPLES_PER_CHANNEL; i++) {
+    for (int i = 0; i < samples_per_channel; i++) {
         float l = in_l[i];
         float r = in_r[i];
 
@@ -319,7 +311,7 @@ void run(float* in_l, float* in_r, float* out_l, float* out_r) {
 
 /* readme first:
   1. this script must begin with "// @desc: script name".
-  2. all adjustable params must be defined with macro PARAM(). flutter will match the regex to set the ui state.
+  2. all adjustable params must be defined with macro PARAM(). flutter will match the regex to set the ui state. SAMPLE_RATE and SAMPLES_PER_CHANNEL are per-defined macros.
   3. you must init all filter state and other params in setParams(). (max 16 PARAM())
   4. memcpy, memset are safe to use. other lib functions are not tested.
   5. (warning for llm) all the getter functions are focus on mono channel(convolver for stereo channel). so you must use at least 2 items to process stereo audio.
@@ -392,6 +384,7 @@ class AudioConfig {
       : _values = values ?? _defaultValues;
 
   static final Map<ParamID, dynamic> _defaultValues = {
+    ParamID.dspEnabled: true,
     ParamID.gainEffectGain: 0.0,
     ParamID.balanceEffectBalance: 0.0,
     ParamID.bassEffectEnabled: false,

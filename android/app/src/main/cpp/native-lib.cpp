@@ -26,7 +26,7 @@
 #include "AudioProcessor.hpp"
 
 const char* ParamName[] = {
-#define X(name, type) #name,
+#define X(name, type, inner_type) #name,
     EFFECT_PARAMS
 #undef X
 };
@@ -245,6 +245,9 @@ JNIEXPORT void JNICALL
 Java_com_qumolangmo_wecho_AudioProcess_nativeInit(
         JNIEnv* env,
         jobject thiz,
+        jint sampleRate,
+        jint samplesPerChannel,
+        jint channels,
         jobject context) {
 
     try {
@@ -259,7 +262,7 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeInit(
         
         const char* path = env->GetStringUTFChars(pathStr, nullptr);
 
-        AudioProcessor::init(path);
+        AudioProcessor::init(path, static_cast<int>(sampleRate), static_cast<int>(samplesPerChannel), static_cast<int>(channels));
 
         /* call all of the constructor to init res */
         auto& audioProcessor = AudioProcessor::getInstance();

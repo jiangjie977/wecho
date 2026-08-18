@@ -50,12 +50,12 @@ class AudioProcess private constructor() {
 
     private external fun nativeSetEffectParam(paramId: Int, value: Any, initialize: Boolean): Unit
     private external fun nativeProcess(input: FloatArray, output: FloatArray, length: Int): Unit
-    private external fun nativeInit(context: Context): Unit
+    private external fun nativeInit(sampleRate: Int, samplesPerChannel: Int, channels: Int, context: Context): Unit
 
     var onScriptCompileError: ((String) -> Unit)? = null
 
-    fun init(context: Context) {
-        nativeInit(context)
+    fun init(sampleRate: Int, samplesPerChannel: Int, channels: Int, context: Context) {
+        nativeInit(sampleRate, samplesPerChannel, channels, context)
     }
 
     fun process(audioBuffer: FloatArray, outputBuffer: FloatArray, read: Int) {
