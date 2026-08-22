@@ -27,6 +27,7 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.AdaptiveIconDrawable
+import android.media.AudioDeviceCallback
 import android.media.projection.MediaProjectionManager
 import android.net.Uri
 import android.os.Build
@@ -53,10 +54,13 @@ class MainActivity : FlutterActivity() {
     
     private var audioDeviceMonitor: AudioDeviceMonitor? = null
     private var isAutoOutputSwitchEnabled = false
+    private var outputWatchCallback: AudioDeviceCallback? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         channel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
+        AudioCaptureService.methodChannel = channel
+
         channel?.setMethodCallHandler { call, result ->
             when (call.method) {
                 "startCapture" -> {
@@ -139,15 +143,33 @@ class MainActivity : FlutterActivity() {
                         result.error("ERROR", e.message, null)
                     }
                 }
+                "reloadConfig" -> {
+                    try {
+                        val device = call.argument<String>("device")
+                        if (device != null) {
+                            ConfigApplier.applyConfigForDevice(this, device)
+                        } else {
+                            val output = audioDeviceMonitor?.getCurrentOutput() ?: "Speaker"
+                            ConfigApplier.applyConfigForDevice(this, output)
+                        }
+                        result.success(null)
+                    } catch (e: Exception) {
+                        result.error("ERROR", e.message, null)
+                    }
+                }
                 "setAutoOutputSwitch" -> {
                     try {
                         val enabled = call.arguments as Boolean
                         isAutoOutputSwitchEnabled = enabled
-                        if (enabled) {
-                            audioDeviceMonitor?.register()
-                        } else {
-                            audioDeviceMonitor?.unregister()
-                        }
+                        result.success(null)
+                    } catch (e: Exception) {
+                        result.error("ERROR", e.message, null)
+                    }
+                }
+                "setPowerSaving" -> {
+                    try {
+                        val enabled = call.arguments as Boolean
+                        AudioCaptureService.powerSaving = enabled
                         result.success(null)
                     } catch (e: Exception) {
                         result.error("ERROR", e.message, null)

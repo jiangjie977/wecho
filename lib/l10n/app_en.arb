@@ -4,6 +4,8 @@
     "captureSettings": "Capture Settings",
     "autoOutputSwitch": "Speaker/Headphone Auto-Switch",
     "autoOutputSwitchDesc": "Off: Aggregate mode, On: Adaptive mode",
+    "powerSaving": "Power Saving",
+    "powerSavingDesc": "Pause AudioTrack and DSP after 60s of silence",
     "channelBalance": "Channel Balance",
     "compressor": "Post Compressor",
     "compressorDesc": "A compressor is an audio effect that restricts the peak level of an audio signal to a specified threshold. It is commonly used to prevent audio signals from exceeding the dynamic range of a device, which can cause distortion and damage to the device. Limiters typically have a threshold, knee, ratio, makeup gain, attack, and release time.",

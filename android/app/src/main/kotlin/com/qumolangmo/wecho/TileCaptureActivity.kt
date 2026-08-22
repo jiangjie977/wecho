@@ -71,6 +71,8 @@ class TileCaptureActivity : Activity() {
             ContextCompat.startForegroundService(this, serviceIntent)
         } else {
             Log.e(TAG, "MediaProjection denied or cancelled: resultCode=$resultCode, data=${data != null}")
+            getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+                .edit().putBoolean("flutter.tileCapturing", false).apply()
         }
         
         finish()

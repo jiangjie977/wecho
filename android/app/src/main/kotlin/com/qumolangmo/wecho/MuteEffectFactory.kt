@@ -137,7 +137,7 @@ class MuteEffectFactory(private val context: Context, private val packageName: S
 
     fun muteOtherSessions(sessions: List<SessionInfo>) {
         updateCurrentAppSessionIds()
-        
+
         val currentSessionIds = sessions.map { it.sessionId }.toSet()
 
         val removedSessions = knownSessions.keys.filter { it !in currentSessionIds }

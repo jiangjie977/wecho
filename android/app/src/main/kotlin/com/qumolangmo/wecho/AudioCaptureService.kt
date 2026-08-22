@@ -29,6 +29,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.media.AudioAttributes
+import android.media.AudioDeviceCallback
 import android.media.AudioFormat
 import android.media.AudioPlaybackCaptureConfiguration
 import android.media.AudioRecord
@@ -43,6 +44,8 @@ import androidx.core.app.NotificationCompat
 import android.os.Handler
 import android.os.Looper
 import org.json.JSONArray
+import androidx.core.content.edit
+import io.flutter.plugin.common.MethodChannel
 
 class AudioCaptureService : Service() {
 
@@ -54,7 +57,10 @@ class AudioCaptureService : Service() {
         const val EXTRA_RESULT_CODE = "resultCode"
         const val EXTRA_RESULT_DATA = "resultData"
         const val PROCESS_CHUNK_SIZE_PER_CHANNEL = 512
-        
+        const val POWER_SAVING_TIMEOUT_S = 60.0
+        const val SILENT_BLOCK_CHECK_TIMEOUT_NS = 1000 * 1_000_000
+        const val SILENCE_THRESHOLD = 1e-6f
+
         @Volatile
         var isCurrentlyCapturing = false
             private set
@@ -67,12 +73,23 @@ class AudioCaptureService : Service() {
         var muteUntilNanos: Long = 0L
             private set
 
-        fun startMutePeriod(durationMs: Long) {
-            muteUntilNanos = System.nanoTime() + durationMs * 2_000_000L
-        }
+        @Volatile
+        var needReloadConfig = false
+            private set
 
-        private var latencySum = 0.0
-        private var latencyCount = 0
+        @Volatile
+        var methodChannel: MethodChannel? = null
+
+        @Volatile
+        var powerSaving = true
+
+        private var silentCount = 0
+        private var nextCheckTime: Long = 0L
+        private var muting = false
+
+        fun startMutePeriod(durationMs: Long) {
+            muteUntilNanos = System.nanoTime() + durationMs * 1_000_000L
+        }
     }
 
     private var mediaProjectionManager: MediaProjectionManager? = null
@@ -85,10 +102,17 @@ class AudioCaptureService : Service() {
     private var muteEffectFactory: MuteEffectFactory? = null
     private var isTileMode = false
 
+    private var deviceWatchCallback: AudioDeviceCallback? = null
+
+    @Volatile
+    private var lastAppliedOutput: String = ""
 
     override fun onCreate() {
         super.onCreate()
         mediaProjectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+
+        val prefs = getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+        powerSaving = prefs.getBoolean("flutter.powerSaving", true)
 
         muteEffectFactory = MuteEffectFactory(this, packageName)
         Log.i(TAG, "MuteEffectFactory initialized")
@@ -106,8 +130,7 @@ class AudioCaptureService : Service() {
         }
 
         if (isCurrentlyCapturing) {
-            Log.w(TAG, "Already capturing, ignoring start request")
-            return START_NOT_STICKY
+            return START_STICKY
         }
 
         if (intent != null && (ACTION_START == intent.action || ACTION_START_FROM_TILE == intent.action)) {
@@ -168,7 +191,7 @@ class AudioCaptureService : Service() {
 
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     private fun startAudioCapture() {
-        isCurrentlyCapturing = true
+        isTileMode = false
 
         /* init unmuteable packages */
         MuteEffectFactory.blacklistedPackages = getBlacklistPackageNames()
@@ -185,12 +208,11 @@ class AudioCaptureService : Service() {
 
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     private fun startAudioCaptureFromTile(startIntent: Intent) {
-        isCurrentlyCapturing = true
         isTileMode = true
 
         if (muteEffectFactory == null) {
             Log.e(TAG, "MuteEffectFactory not initialized")
-            stopSelf()
+            abortStartFromTile()
             return
         }
 
@@ -201,14 +223,14 @@ class AudioCaptureService : Service() {
 
         if (resultData == null) {
             Log.e(TAG, "No MediaProjection result data, cannot start capture from tile")
-            stopSelf()
+            abortStartFromTile()
             return
         }
 
         mediaProjection = mediaProjectionManager?.getMediaProjection(resultCode, resultData)
         if (mediaProjection == null) {
             Log.e(TAG, "Failed to get MediaProjection from tile")
-            stopSelf()
+            abortStartFromTile()
             return
         }
 
@@ -225,6 +247,13 @@ class AudioCaptureService : Service() {
         val config = builder.build()
 
         startAudioCaptureInternal(config)
+    }
+
+    private fun abortStartFromTile() {
+        isCurrentlyCapturing = false
+        getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+            .edit().putBoolean("flutter.tileCapturing", false).apply()
+        stopSelf()
     }
 
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
@@ -284,6 +313,12 @@ class AudioCaptureService : Service() {
         val audioProcess = com.qumolangmo.wecho.AudioProcess.getInstance()
         audioProcess.masterEnabled = true
 
+        /* load config from ConfigApplier */
+        val currentOutput = AudioDeviceMonitor.getInstance(this).getCurrentOutput()
+        lastAppliedOutput = currentOutput
+        ConfigApplier.applyConfigForDevice(this, currentOutput)
+        startWatchingOutputDevices()
+
         val samplesPerFrame = PROCESS_CHUNK_SIZE_PER_CHANNEL * 2
 
         singleProcessThread = Thread({
@@ -296,6 +331,37 @@ class AudioCaptureService : Service() {
                 while (!Thread.currentThread().isInterrupted) {
                     audioRecord?.read(inBuffer, 0, samplesPerFrame, AudioRecord.READ_BLOCKING)
 
+                    if (powerSaving) {
+                        val t = System.nanoTime()
+
+                        if (t >= nextCheckTime) {
+                            nextCheckTime = t + SILENT_BLOCK_CHECK_TIMEOUT_NS
+                            
+                            if (isSilent(inBuffer)) {
+                                silentCount++
+
+                                if (silentCount > 60 && !muting) {
+                                    muting = true
+                                    audioTrack?.stop()
+                                    audioTrack?.flush()
+                                }
+                            } else {
+                                silentCount = 0
+                                if (muting) {
+                                    muting = false
+                                    audioTrack?.play()
+                                }
+                            }
+                        }
+
+                        if (muting) {
+                            continue
+                        }
+                    } else if (muting) {
+                        muting = false
+                        audioTrack?.play()
+                    }
+
                     for (i in 0 until inBuffer.size step 2) {
                         inBuffer[i] += nonMute
                         inBuffer[i+1] += nonMute
@@ -304,13 +370,7 @@ class AudioCaptureService : Service() {
 
                     val t0 = System.nanoTime()
                     audioProcess.process(inBuffer, outBuffer, samplesPerFrame)
-                    latencySum += (System.nanoTime() - t0) / 1_000_000.0
-                    latencyCount++
-                    if (latencyCount >= 10) {
-                        processingLatencyMs = latencySum / latencyCount
-                        latencySum = 0.0
-                        latencyCount = 0
-                    }
+                    processingLatencyMs = (System.nanoTime() - t0) / 1_000_000.0
 
                     val currentTime = System.nanoTime()
                     if (currentTime < muteUntilNanos) {
@@ -335,14 +395,55 @@ class AudioCaptureService : Service() {
             muteEffectFactory?.registerPlaybackCallback()
             muteEffectFactory?.dumpAudioSessions { sessions -> muteEffectFactory?.muteOtherSessions(sessions) }
         }
+
+        isCurrentlyCapturing = true
+    }
+
+    private fun startWatchingOutputDevices() {
+        val monitor = AudioDeviceMonitor.getInstance(this)
+
+        deviceWatchCallback = monitor.startWatching { output ->
+            if (!isCurrentlyCapturing) {
+                lastAppliedOutput = output
+                return@startWatching
+            }
+            if (output == lastAppliedOutput) return@startWatching
+
+            if (!ConfigApplier.isAutoOutputSwitchEnabled(this)) {
+                Log.d(TAG, "Auto output switch disabled, ignore device change -> $output")
+                lastAppliedOutput = output
+                return@startWatching
+            }
+
+            Log.i(TAG, "Output device changed during capture: $lastAppliedOutput -> $output")
+            lastAppliedOutput = output
+
+            ConfigApplier.applyConfigForDevice(this, output)
+            updateNotification(output)
+
+            methodChannel?.invokeMethod("onOutputModeChanged", mapOf(
+                "output" to output
+            ))
+        }
+
+        Log.i(TAG, "Output device watcher registered (current output: $lastAppliedOutput)")
+    }
+
+    private fun stopWatchingOutputDevices() {
+        deviceWatchCallback?.let { callback ->
+            AudioDeviceMonitor.getInstance(this).stopWatching(callback)
+        }
+        deviceWatchCallback = null
     }
 
     private fun stopAudioCapture() {
         isCurrentlyCapturing = false
-        
+
         val prefs = getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
-        prefs.edit().putBoolean("flutter.tileCapturing", false).apply()
-        
+        prefs.edit { putBoolean("flutter.tileCapturing", false) }
+
+        stopWatchingOutputDevices()
+
         muteEffectFactory?.unregisterPlaybackCallback()
         muteEffectFactory?.releaseAll()
         muteEffectFactory = null
@@ -374,11 +475,24 @@ class AudioCaptureService : Service() {
         super.onTaskRemoved(rootIntent)
     }
 
+    private fun buildNotification(deviceName: String): Notification {
+        val channelId = "audio_capture_channel"
+        return NotificationCompat.Builder(this, channelId)
+            .setContentTitle("WEcho")
+            .setContentText("Output - $deviceName")
+            .setSmallIcon(R.drawable.ic_wecho_tile)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setOngoing(true)
+            .setAutoCancel(false)
+            .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
+            .build()
+    }
+
     private fun startForegroundWithNotification() {
         val channelId = "audio_capture_channel"
         val channel = NotificationChannel(
-            channelId, 
-            "Audio Capture", 
+            channelId,
+            "Audio Capture",
             NotificationManager.IMPORTANCE_LOW
         ).apply {
             description = "Audio capture service notification"
@@ -389,21 +503,27 @@ class AudioCaptureService : Service() {
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         manager.createNotificationChannel(channel)
 
-        val notification: Notification = NotificationCompat.Builder(this, channelId)
-            .setContentTitle("Audio Capture")
-            .setContentText("Capturing audio from other apps.")
-            .setSmallIcon(R.drawable.ic_wecho_tile)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
-            .setOngoing(true)
-            .setAutoCancel(false)
-            .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
-            .build()
+        val currentDevice = AudioDeviceMonitor.getInstance(this).getCurrentOutput()
+        startForeground(1, buildNotification(currentDevice), ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION)
+    }
 
-        startForeground(1, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION)
+    /* Updates the foreground notification text with the new device name. */
+    private fun updateNotification(deviceName: String) {
+        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        manager.notify(1, buildNotification(deviceName))
     }
 
     override fun onBind(intent: Intent?): IBinder? {
         return null
+    }
+
+    private fun isSilent(buffer: FloatArray): Boolean {
+        var peak = 0.0f
+        for (v in buffer) {
+            val a = if (v < 0) -v else v
+            if (a > peak) peak = a
+        }
+        return peak <= SILENCE_THRESHOLD
     }
 
     fun getAllAudioSessionIds(): Set<Int> {

@@ -23,40 +23,35 @@ import 'audio_config.dart';
 
 class ConfigManager {
   static const String _keyAutoOutputSwitch = 'autoOutputSwitch';
-  static const String _keySpeakerConfig = 'config_speaker';
-  static const String _keyHeadphoneConfig = 'config_headphone';
-  static const String _keyDisabledConfig = 'config_disabled';
+  static const String _keyConfigPrefix = 'config_'; // + sanitized deviceName or "disabled"
   static const String _keyScriptLibrary = 'scriptLibrary';
-  static const String _keyScriptParamsPrefix = 'scriptParams_'; // + mode name
-  static const String _keyActiveScriptPrefix = 'activeScript_'; // + mode name
+  static const String _keyScriptParamsPrefix = 'scriptParams_'; // + sanitized deviceName
+  static const String _keyActiveScriptPrefix = 'activeScript_'; // + sanitized deviceName
 
   final SharedPreferences _prefs;
-  OutputMode _currentMode = OutputMode.disabled;
-  String _currentOutputDevice = 'unknown';
-  String _previousOutputDevice = 'unknown';
-  Function(OutputMode mode, AudioConfig config)? onConfigChanged;
+  String _currentDeviceKey = 'disabled';
+  String _currentDeviceName = 'unknown';
+  Future<void> Function(String deviceKey, AudioConfig config)? onConfigChanged;
   Function(String device)? onDeviceChanged;
 
   ConfigManager(this._prefs);
 
   bool get autoOutputSwitch => _prefs.getBool(_keyAutoOutputSwitch) ?? true;
+  String get currentDeviceKey => _currentDeviceKey;
+  String get currentDeviceName => _currentDeviceName;
+  bool get isDisabled => _currentDeviceKey == 'disabled';
 
-  OutputMode get currentMode => _currentMode;
-
-  String get currentOutputDevice => _currentOutputDevice;
-
-  Future<void> initialize() async {
-    final autoSwitch = autoOutputSwitch;
-    if (!autoSwitch) {
-      _currentMode = OutputMode.disabled;
-    }
+  /// Sanitizes a device name into a safe key segment: lowercase + non
+  /// alphanumeric chars replaced with '_'. Must match the Kotlin-side
+  /// ConfigApplier.sanitizeDeviceName rule exactly.
+  static String sanitizeDeviceName(String deviceName) {
+    return deviceName.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '_');
   }
+
+  Future<void> initialize() async {}
 
   Future<void> setAutoOutputSwitch(bool enabled) async {
     await _prefs.setBool(_keyAutoOutputSwitch, enabled);
-    if (!enabled) {
-      _currentMode = OutputMode.disabled;
-    }
   }
 
   /// *****************************************Script Library****************************************
@@ -81,63 +76,76 @@ class ConfigManager {
     final library = loadScriptLibrary();
     library.remove(desc);
     await saveScriptLibrary(library);
-    // Also remove params for this script from all modes
-    for (final mode in OutputMode.values) {
-      final paramsMap = loadScriptParams(mode);
-      paramsMap.remove(desc);
-      await saveScriptParams(mode, paramsMap);
+    // Also remove params for this script from all device keys
+    final keys = _prefs
+        .getKeys()
+        .where((key) => key.startsWith(_keyScriptParamsPrefix))
+        .toList();
+    for (final key in keys) {
+      final json = _prefs.getString(key);
+      if (json == null) continue;
+      final map = jsonDecode(json) as Map<String, dynamic>;
+      if (map.containsKey(desc)) {
+        map.remove(desc);
+        await _prefs.setString(key, jsonEncode(map));
+      }
     }
   }
 
   /// *****************************************Script params****************************************
 
-  Map<String, List<ScriptParam>> loadScriptParams(OutputMode mode) {
-    final key = '$_keyScriptParamsPrefix${mode.name}';
+  Map<String, List<ScriptParam>> loadScriptParams(String deviceKey) {
+    final key = '$_keyScriptParamsPrefix$deviceKey';
     final json = _prefs.getString(key);
     if (json == null) return {};
     final map = jsonDecode(json) as Map<String, dynamic>;
     return map.map((k, v) => MapEntry(
-      k,
-      (v as List).map((e) => ScriptParam.fromJson(e as Map<String, dynamic>)).toList(),
-    ));
+          k,
+          (v as List)
+              .map((e) => ScriptParam.fromJson(e as Map<String, dynamic>))
+              .toList(),
+        ));
   }
 
-  Future<void> saveScriptParams(OutputMode mode, Map<String, List<ScriptParam>> paramsMap) async {
-    final key = '$_keyScriptParamsPrefix${mode.name}';
-    final encoded = jsonEncode(paramsMap.map((k, v) => MapEntry(k, v.map((p) => p.toJson()).toList())));
+  Future<void> saveScriptParams(
+      String deviceKey, Map<String, List<ScriptParam>> paramsMap) async {
+    final key = '$_keyScriptParamsPrefix$deviceKey';
+    final encoded = jsonEncode(paramsMap
+        .map((k, v) => MapEntry(k, v.map((p) => p.toJson()).toList())));
     await _prefs.setString(key, encoded);
   }
 
-  Future<void> saveScriptParamsForDesc(OutputMode mode, String desc, List<ScriptParam> params) async {
-    final paramsMap = loadScriptParams(mode);
+  Future<void> saveScriptParamsForDesc(
+      String deviceKey, String desc, List<ScriptParam> params) async {
+    final paramsMap = loadScriptParams(deviceKey);
     paramsMap[desc] = params;
-    await saveScriptParams(mode, paramsMap);
+    await saveScriptParams(deviceKey, paramsMap);
   }
 
-  List<ScriptParam> loadScriptParamsForDesc(OutputMode mode, String desc) {
-    final paramsMap = loadScriptParams(mode);
+  List<ScriptParam> loadScriptParamsForDesc(String deviceKey, String desc) {
+    final paramsMap = loadScriptParams(deviceKey);
     return paramsMap[desc] ?? [];
   }
 
   /// *****************************************Active script****************************************
 
-  String getActiveScriptDesc(OutputMode mode) {
-    return _prefs.getString('$_keyActiveScriptPrefix${mode.name}') ?? '';
+  String getActiveScriptDesc(String deviceKey) {
+    return _prefs.getString('$_keyActiveScriptPrefix$deviceKey') ?? '';
   }
 
-  Future<void> setActiveScriptDesc(OutputMode mode, String desc) async {
-    await _prefs.setString('$_keyActiveScriptPrefix${mode.name}', desc);
+  Future<void> setActiveScriptDesc(String deviceKey, String desc) async {
+    await _prefs.setString('$_keyActiveScriptPrefix$deviceKey', desc);
   }
 
   /// *****************************************General Config****************************************
 
-  Future<void> saveConfig(OutputMode mode, AudioConfig config) async {
-    final key = _getConfigKey(mode);
+  Future<void> saveConfig(String deviceKey, AudioConfig config) async {
+    final key = '$_keyConfigPrefix$deviceKey';
     await _prefs.setString(key, config.toJsonString());
   }
 
-  AudioConfig loadConfig(OutputMode mode) {
-    final key = _getConfigKey(mode);
+  AudioConfig loadConfig(String deviceKey) {
+    final key = '$_keyConfigPrefix$deviceKey';
     final jsonString = _prefs.getString(key);
     if (jsonString != null && jsonString.isNotEmpty) {
       return AudioConfig.fromJsonString(jsonString);
@@ -146,63 +154,21 @@ class ConfigManager {
   }
 
   AudioConfig getCurrentConfig() {
-    return loadConfig(_currentMode);
+    return loadConfig(_currentDeviceKey);
   }
 
   Future<void> updateOutputDevice(String device) async {
-    _previousOutputDevice = _currentOutputDevice;
-    _currentOutputDevice = device;
+    _currentDeviceName = device;
 
-    if (autoOutputSwitch) {
-      final newMode = _determineMode(device);
-      if (newMode != _currentMode) {
-        _currentMode = newMode;
-        final config = getCurrentConfig();
-        onConfigChanged?.call(_currentMode, config);
-      }
-    } else if (_currentMode != OutputMode.disabled) {
-      _currentMode = OutputMode.disabled;
+    final newDeviceKey = autoOutputSwitch ? sanitizeDeviceName(device) : 'disabled';
+
+    if (newDeviceKey != _currentDeviceKey) {
+      _currentDeviceKey = newDeviceKey;
       final config = getCurrentConfig();
-      onConfigChanged?.call(_currentMode, config);
+      await onConfigChanged?.call(_currentDeviceKey, config);
     }
 
     onDeviceChanged?.call(device);
-  }
-
-  OutputMode _determineMode(String device) {
-    final lowerDevice = device.toLowerCase();
-    if (lowerDevice.contains('speaker') || lowerDevice.contains('扬声器')) {
-      return OutputMode.speaker;
-    } else if (lowerDevice.contains('headphone') ||
-        lowerDevice.contains('earphone') ||
-        lowerDevice.contains('耳机') ||
-        lowerDevice.contains('wired') ||
-        lowerDevice.contains('bluetooth')) {
-      return OutputMode.headphone;
-    }
-    return OutputMode.disabled;
-  }
-
-  String _getConfigKey(OutputMode mode) {
-    switch (mode) {
-      case OutputMode.speaker:
-        return _keySpeakerConfig;
-      case OutputMode.headphone:
-        return _keyHeadphoneConfig;
-      case OutputMode.disabled:
-        return _keyDisabledConfig;
-    }
-  }
-
-  String getModeDisplayName(OutputMode mode) {
-    switch (mode) {
-      case OutputMode.speaker:
-        return 'Speaker';
-      case OutputMode.headphone:
-        return 'Headphone';
-      case OutputMode.disabled:
-        return 'Disabled';
-    }
   }
 
   /// *****************************************Config Management****************************************

@@ -42,8 +42,7 @@
             android:exported="false"
             android:theme="@android:style/Theme.Translucent.NoTitleBar"
             android:taskAffinity=""
-            android:excludeFromRecents="true"
-            android:noHistory="true" />
+            android:excludeFromRecents="true" />
         <provider
             android:name="rikka.shizuku.ShizukuProvider"
             android:authorities="${applicationId}.shizuku"
@@ -65,7 +64,7 @@
             android:name=".AudioCaptureService"
             android:enabled="true"
             android:exported="false"
-            android:stopWithTask="true"
+            android:stopWithTask="false"
             android:foregroundServiceType="mediaProjection" />
         
         <!-- Wecho Quick Settings Tile -->

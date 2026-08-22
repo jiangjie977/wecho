@@ -25,12 +25,6 @@
 
 #include "AudioProcessor.hpp"
 
-const char* ParamName[] = {
-#define X(name, type, inner_type) #name,
-    EFFECT_PARAMS
-#undef X
-};
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -75,8 +69,6 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
                     jmethodID booleanValueMethod = env->GetMethodID(valueClass, "booleanValue", "()Z");
                     jboolean jValue = env->CallBooleanMethod(value, booleanValueMethod);
                     dispatch((bool)jValue);
-                    
-                    LOG_D("set %s: %d", ParamName[paramId], (int)jValue);
                 }
                 break;
             }
@@ -99,8 +91,6 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
                     jmethodID intValueMethod = env->GetMethodID(valueClass, "intValue", "()I");
                     jint jValue = env->CallIntMethod(value, intValueMethod);
                     dispatch((int)jValue);
-
-                    LOG_D("set %s: %d", ParamName[paramId], (int)jValue);
                 }
                 break;
             }
@@ -132,9 +122,6 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
                     jmethodID doubleValueMethod = env->GetMethodID(valueClass, "doubleValue", "()D");
                     jdouble jValue = env->CallDoubleMethod(value, doubleValueMethod);
                     dispatch((float)jValue);
-
-                    LOG_D("set %s: %f", ParamName[paramId], (float)jValue);
-
                 } else {
                     LOG_E("value is neither Float nor Double");
                 }
@@ -150,8 +137,6 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
                     std::string code(jValueChars);
                     env->ReleaseStringUTFChars(jValue, jValueChars);
                     dispatch(code);
-
-                    LOG_D("set %s: %zu bytes", ParamName[paramId], code.size());
 
                     /* send compile error info to Kotlin if any. */
                     std::string error = ScriptEffect::getLastError();
@@ -200,8 +185,6 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
                     std::string ir_path(jValueChars);
                     env->ReleaseStringUTFChars(jValue, jValueChars);
                     dispatch(ir_path);
-
-                    LOG_D("set %s: %s", ParamName[paramId], ir_path.c_str());
                 }
                 break;
             }
@@ -231,7 +214,6 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
                 break;
             }
             default:
-                LOG_E("Unknown paramId: %s", ParamName[paramId]);
                 break;
         }
 

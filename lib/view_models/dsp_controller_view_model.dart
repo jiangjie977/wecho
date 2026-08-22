@@ -49,6 +49,7 @@ class DSPControllerViewModel {
   bool diffSurroundingEffectExpanded = false;
 
   bool autoOutputSwitch = true;
+  bool powerSaving = true;
   String currentAudioOutput = 'unknown';
   String appVersion = 'Unknown';
   /// ***************************************** tcc compile error & crash state variable ****************************************
@@ -71,9 +72,8 @@ class DSPControllerViewModel {
   late SharedPreferences _prefs;
   late ConfigManager _configManager;
   Function()? onStateChanged;
-  Function(OutputMode)? onOutputModeChanged;
-  OutputMode currentOutputMode = OutputMode.disabled;
-  String _lastDevice = '';
+  Function(String)? onOutputModeChanged;
+  String currentDeviceKey = 'disabled';
   Timer? _pollingTimer;
 
   final Completer<void> _initCompleter = Completer<void>();
@@ -95,7 +95,16 @@ class DSPControllerViewModel {
         isCapturing = call.arguments as bool;
         onStateChanged?.call();
       } else if (call.method == 'audioOutputChanged') {
-        currentAudioOutput = call.arguments as String;
+        final device = call.arguments as String;
+        currentAudioOutput = device;
+        onStateChanged?.call();
+      } else if (call.method == 'onOutputModeChanged') {
+        final args = Map<String, dynamic>.from(call.arguments as Map);
+        final output = args['output'] as String;
+        currentAudioOutput = output;
+        if (autoOutputSwitch) {
+          await _configManager.updateOutputDevice(output);
+        }
         onStateChanged?.call();
       } else if (call.method == 'onScriptCompileError') {
         _lastCompileError = call.arguments as String;
@@ -106,9 +115,7 @@ class DSPControllerViewModel {
     });
 
     await _loadSettings();
-  
-    await _applyAllParams();
-  
+
     await requestShizukuPermission();
     _startPolling();
     await _fetchCaptureStatus();
@@ -123,7 +130,7 @@ class DSPControllerViewModel {
     if (id == ParamID.scriptEffectParams && value is List<ScriptParam>) {
       final desc = activeScriptDesc;
       if (desc.isNotEmpty) {
-        await _configManager.saveScriptParamsForDesc(currentOutputMode, desc, value);
+        await _configManager.saveScriptParamsForDesc(currentDeviceKey, desc, value);
       }
     }
     await _saveSettings();
@@ -153,25 +160,8 @@ class DSPControllerViewModel {
   void _startPolling() {
     _pollingTimer?.cancel();
     _pollingTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      _pollDevice();
       _pollLatency();
     });
-  }
-
-  Future<void> _pollDevice() async {
-    if (!_configManager.autoOutputSwitch) return;
-
-    final result = await _invokeMethodWithResult<String>('getAutoOutput');
-    result.fold(
-      (_) {},
-      (device) {
-        if (device != _lastDevice) {
-          _lastDevice = device;
-          currentAudioOutput = device;
-          _configManager.updateOutputDevice(device);
-        }
-      },
-    );
   }
 
   Future<void> _pollLatency() async {
@@ -190,20 +180,9 @@ class DSPControllerViewModel {
     _pollingTimer = null;
   }
 
-  Future<void> _applyAllParams({bool mute = false}) async {
-    if (mute) {
-      await _invokeMethod('startMutePeriod', 1000);
-    }
-
-    _syncScriptParams();
-    for (final paramId in ParamID.values.reversed) {
-      await setEffectParam(paramId.index, _config[paramId], initialize: true);
-    }
-  }
-
   String get activeScriptDesc {
     try {
-      return _configManager.getActiveScriptDesc(currentOutputMode);
+      return _configManager.getActiveScriptDesc(currentDeviceKey);
     } catch (_) {
       return '';
     }
@@ -213,7 +192,7 @@ class DSPControllerViewModel {
     final desc = activeScriptDesc;
     if (desc.isEmpty) return;
     final params = _config[ParamID.scriptEffectParams] as List<ScriptParam>;
-    await _configManager.saveScriptParamsForDesc(currentOutputMode, desc, params);
+    await _configManager.saveScriptParamsForDesc(currentDeviceKey, desc, params);
   }
 
   void _loadCurrentScriptParams() {
@@ -229,7 +208,7 @@ class DSPControllerViewModel {
       _config = _config.copyWith({ParamID.scriptEffectCode: code});
     }
 
-    final savedParams = _configManager.loadScriptParamsForDesc(currentOutputMode, desc);
+    final savedParams = _configManager.loadScriptParamsForDesc(currentDeviceKey, desc);
     _syncScriptParams(savedParams: savedParams);
   }
 
@@ -275,12 +254,12 @@ class DSPControllerViewModel {
     final desc = parseScriptDesc(code);
     if (desc.isEmpty || desc == 'not found desc.') return false;
     await _configManager.saveScriptToLibrary(desc, code);
-    await _configManager.setActiveScriptDesc(currentOutputMode, desc);
+    await _configManager.setActiveScriptDesc(currentDeviceKey, desc);
 
     _config = _config.copyWith({ParamID.scriptEffectCode: code});
     _syncScriptParams();
 
-    await _configManager.saveScriptParamsForDesc(currentOutputMode, desc, _config[ParamID.scriptEffectParams] as List<ScriptParam>);
+    await _configManager.saveScriptParamsForDesc(currentDeviceKey, desc, _config[ParamID.scriptEffectParams] as List<ScriptParam>);
 
     _lastCompileError = '';
     await setEffectParam(ParamID.scriptEffectCode.index, code);
@@ -297,13 +276,13 @@ class DSPControllerViewModel {
 
     await _saveCurrentScriptParams();
 
-    await _configManager.setActiveScriptDesc(currentOutputMode, desc);
+    await _configManager.setActiveScriptDesc(currentDeviceKey, desc);
     _config = _config.copyWith({ParamID.scriptEffectCode: code});
 
-    final savedParams = _configManager.loadScriptParamsForDesc(currentOutputMode, desc);
+    final savedParams = _configManager.loadScriptParamsForDesc(currentDeviceKey, desc);
     _syncScriptParams(savedParams: savedParams);
  
-    await _configManager.saveScriptParamsForDesc(currentOutputMode, desc, _config[ParamID.scriptEffectParams] as List<ScriptParam>);
+    await _configManager.saveScriptParamsForDesc(currentDeviceKey, desc, _config[ParamID.scriptEffectParams] as List<ScriptParam>);
     await setEffectParam(ParamID.scriptEffectCode.index, code);
     await setEffectParam(ParamID.scriptEffectParams.index, _config[ParamID.scriptEffectParams]);
     await _saveSettings();
@@ -313,7 +292,7 @@ class DSPControllerViewModel {
   Future<void> deleteScript(String desc) async {
     await _configManager.deleteScriptFromLibrary(desc);
     if (activeScriptDesc == desc) {
-      await _configManager.setActiveScriptDesc(currentOutputMode, '');
+      await _configManager.setActiveScriptDesc(currentDeviceKey, '');
       _config = _config.copyWith({
         ParamID.scriptEffectCode: '',
         ParamID.scriptEffectParams: <ScriptParam>[],
@@ -348,15 +327,15 @@ class DSPControllerViewModel {
     _configManager = ConfigManager(_prefs);
     await _configManager.initialize();
 
-    _configManager.onConfigChanged = (mode, config) async {
+    _configManager.onConfigChanged = (deviceKey, config) async {
       await _saveCurrentScriptParams();
-      await _configManager.saveConfig(currentOutputMode, _config);
+      await _configManager.saveConfig(currentDeviceKey, _config);
 
       _config = config;
-      currentOutputMode = mode;
+      currentDeviceKey = deviceKey;
       _loadCurrentScriptParams();
-      await _applyAllParams(mute: true);
-      onOutputModeChanged?.call(mode);
+
+      onOutputModeChanged?.call(deviceKey);
       onStateChanged?.call();
     };
 
@@ -368,16 +347,16 @@ class DSPControllerViewModel {
     await _configManager.saveScriptToLibrary(defaultDesc, kDefaultScriptCode);
     library = _configManager.loadScriptLibrary();
     // Ensure default script is active for current mode if none set
-    currentOutputMode = _configManager.currentMode;
-    var curActiveDesc = _configManager.getActiveScriptDesc(currentOutputMode);
+    currentDeviceKey = _configManager.currentDeviceKey;
+    var curActiveDesc = _configManager.getActiveScriptDesc(currentDeviceKey);
     if (curActiveDesc.isEmpty) {
 
       final legacyDesc = _prefs.getString('activeScriptDesc') ?? '';
       if (legacyDesc.isNotEmpty) {
-        await _configManager.setActiveScriptDesc(currentOutputMode, legacyDesc);
+        await _configManager.setActiveScriptDesc(currentDeviceKey, legacyDesc);
         curActiveDesc = legacyDesc;
       } else {
-        await _configManager.setActiveScriptDesc(currentOutputMode, defaultDesc);
+        await _configManager.setActiveScriptDesc(currentDeviceKey, defaultDesc);
         curActiveDesc = defaultDesc;
       }
     }
@@ -387,10 +366,11 @@ class DSPControllerViewModel {
       _config = _config.copyWith({ParamID.scriptEffectCode: code});
     }
 
-    final savedParams = _configManager.loadScriptParamsForDesc(currentOutputMode, curActiveDesc);
+    final savedParams = _configManager.loadScriptParamsForDesc(currentDeviceKey, curActiveDesc);
     _syncScriptParams(savedParams: savedParams);
 
     autoOutputSwitch = _prefs.getBool('autoOutputSwitch') ?? true;
+    powerSaving = _prefs.getBool('powerSaving') ?? true;
     masterEnabled = _prefs.getBool('masterEnabled') ?? true;
     channelBalanceExpanded = _prefs.getBool('channelBalanceExpanded') ?? false;
     globalGainExpanded = _prefs.getBool('globalGainExpanded') ?? false;
@@ -414,6 +394,7 @@ class DSPControllerViewModel {
 
     await _fetchCaptureStatus();
     await setAutoOutputSwitch(autoOutputSwitch);
+    await setPowerSaving(powerSaving);
     await _fetchAutoOutput();
     await _fetchAppVersion();
     await _loadLogSettings();
@@ -424,8 +405,9 @@ class DSPControllerViewModel {
   }
 
   Future<void> _saveSettings() async {
-    await _configManager.saveConfig(currentOutputMode, _config);
+    await _configManager.saveConfig(currentDeviceKey, _config);
     await _prefs.setBool('autoOutputSwitch', autoOutputSwitch);
+    await _prefs.setBool('powerSaving', powerSaving);
     await _prefs.setBool('masterEnabled', masterEnabled);
     await _prefs.setBool('channelBalanceExpanded', channelBalanceExpanded);
     await _prefs.setBool('globalGainExpanded', globalGainExpanded);
@@ -478,25 +460,33 @@ class DSPControllerViewModel {
     } else {
       // Save current script params before switching to disabled mode
       await _saveCurrentScriptParams();
-      await _configManager.saveConfig(currentOutputMode, _config);
+      await _configManager.saveConfig(currentDeviceKey, _config);
       await _configManager.updateOutputDevice(currentAudioOutput);
-      currentOutputMode = OutputMode.disabled;
-      _config = _configManager.loadConfig(OutputMode.disabled);
+      currentDeviceKey = 'disabled';
+      _config = _configManager.loadConfig('disabled');
       _loadCurrentScriptParams();
-      await _applyAllParams();
-      onOutputModeChanged?.call(OutputMode.disabled);
+      await _saveSettings();
+      await _invokeMethod('reloadConfig', {'device': currentDeviceKey});
+      onOutputModeChanged?.call(currentDeviceKey);
     }
+    onStateChanged?.call();
+  }
+
+  Future<void> setPowerSaving(bool enabled) async {
+    powerSaving = enabled;
+    await _prefs.setBool('powerSaving', enabled);
+    await _invokeMethod('setPowerSaving', enabled);
     onStateChanged?.call();
   }
 
   Future<void> _fetchAutoOutput() async {
     final result = await _invokeMethodWithResult<String>('getAutoOutput');
-    result.fold(
-      (_) {},
-      (device) {
+    await result.fold<Future<void>>(
+      (_) async {},
+      (device) async {
         currentAudioOutput = device;
         if (autoOutputSwitch) {
-          _configManager.updateOutputDevice(device);
+          await _configManager.updateOutputDevice(device);
         }
         onStateChanged?.call();
       },
@@ -505,22 +495,6 @@ class DSPControllerViewModel {
 
   Future<void> updateOutputDevice(String device) async {
     await _configManager.updateOutputDevice(device);
-  }
-
-  Future<void> switchOutputMode(OutputMode mode) async {
-    if (mode == currentOutputMode) return;
-
-    // Save current script params for current mode
-    await _saveCurrentScriptParams();
-    await _configManager.saveConfig(currentOutputMode, _config);
-
-    currentOutputMode = mode;
-    _config = _configManager.loadConfig(mode);
-    // Load script params for new mode
-    _loadCurrentScriptParams();
-    await _applyAllParams();
-    onOutputModeChanged?.call(mode);
-    onStateChanged?.call();
   }
 
   Future<void> toggleCapture() async {
@@ -713,10 +687,10 @@ class DSPControllerViewModel {
     final scriptCode = _config[ParamID.scriptEffectCode] as String;
 
     await saveScript(scriptCode);
-    await _applyAllParams();
     await _saveSettings();
 
     await _configManager.saveLastSelectedConfig(name);
+    await _invokeMethod('reloadConfig', {'device': currentDeviceKey});
 
     onStateChanged?.call();
     return true;

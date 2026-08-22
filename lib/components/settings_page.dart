@@ -99,6 +99,15 @@ class _SettingsPageState extends State<SettingsPage> {
                     colorScheme: colorScheme,
                   ),
                   _buildDivider(colorScheme),
+                  _buildSwitchTile(
+                    icon: Icons.battery_saver,
+                    title: AppLocalizations.of(context)!.powerSaving,
+                    subtitle: AppLocalizations.of(context)!.powerSavingDesc,
+                    value: viewModel.powerSaving,
+                    onChanged: (value) => viewModel.setPowerSaving(value),
+                    colorScheme: colorScheme,
+                  ),
+                  _buildDivider(colorScheme),
                   _buildNavigationTile(
                     icon: Icons.block,
                     title: AppLocalizations.of(context)!.appBlacklist,
