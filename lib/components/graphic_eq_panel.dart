@@ -169,7 +169,7 @@ class _GraphicEqPanelState extends State<GraphicEqPanel> {
   String _currentPresetName = 'Custom';
   int _selectedBand = 0;
   int _bandCount = 10;
-  bool _locked = false;
+  bool _locked = true;
 
   // Relative drag state.
   double _dragStartY = 0;
