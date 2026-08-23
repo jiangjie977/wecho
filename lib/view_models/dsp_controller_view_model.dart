@@ -518,9 +518,6 @@ class DSPControllerViewModel {
 
   Future<void> setEffectParam(int paramId, dynamic value, {bool initialize = false}) async {
     dynamic finalValue = value;
-    if (paramId == ParamID.iirEqualizerEffectCoeffs.index && value is List<IIREqualizerCoeffs>) {
-      finalValue = serializeIIREqualizerCoeffs(value);
-    }
     if (paramId == ParamID.scriptEffectParams.index && value is List<ScriptParam>) {
       finalValue = serializeScriptParams(value);
     }

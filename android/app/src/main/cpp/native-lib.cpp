@@ -188,28 +188,18 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
                 }
                 break;
             }
-            case IIR_EQUALIZER_EFFECT_COEFFS:
+            case IIR_EQUALIZER_EFFECT_CONFIG:
             {
-                jclass byteArrayClass = env->FindClass("[B");
-                if (env->IsInstanceOf(value, byteArrayClass)) {
-                    jbyteArray byteArray = (jbyteArray)value;
-                    jsize len = env->GetArrayLength(byteArray);
-                    if (len == 10 * 16) {
-                        jbyte* bytes = env->GetByteArrayElements(byteArray, nullptr);
-
-                        IIREqualizerCoeffs coeffs;
-                        for (int i = 0; i < 10; i++) {
-                            int offset = i * 16;
-                            coeffs[i].index      = *reinterpret_cast<int32_t*>(bytes + offset);
-                            coeffs[i].start_freq = *reinterpret_cast<int32_t*>(bytes + offset + 4);
-                            coeffs[i].end_freq   = *reinterpret_cast<int32_t*>(bytes + offset + 8);
-                            coeffs[i].gain       = *reinterpret_cast<int32_t*>(bytes + offset + 12);
-                        }
-
-                        env->ReleaseByteArrayElements(byteArray, bytes, JNI_ABORT);
-
-                        dispatch(coeffs);
-                    }
+                bool isString = env->IsInstanceOf(value, env->FindClass("java/lang/String"));
+                if (isString) {
+                    jmethodID stringValueMethod = env->GetMethodID(valueClass, "toString", "()Ljava/lang/String;");
+                    jstring jValue = (jstring)env->CallObjectMethod(value, stringValueMethod);
+                    const char* jValueChars = env->GetStringUTFChars(jValue, nullptr);
+                    std::string coeffs(jValueChars);
+                    env->ReleaseStringUTFChars(jValue, jValueChars);
+                    dispatch(coeffs);
+                } else {
+                    LOG_E("IIR_EQUALIZER_EFFECT_CONFIG value is not String");
                 }
                 break;
             }

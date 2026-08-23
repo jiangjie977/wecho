@@ -51,7 +51,7 @@
     "lowcatDesc": "扬声器模式专用，可以切除截至频率以下的低频，留出余量来驱动更大的声音响度。",
     "cutoffFrequency": "截至频率",
     "equalizer": "IIR EQ",
-    "equalizerDesc": "简单的IIR均衡器实现，目前只支持固定的10段调节",
+    "equalizerDesc": "图形EQ，支持1-64个频段，可直接在界面上拖动曲线来让效果生效，也可以点击tab来精确调节",
     "virtualBass": "wecho 虚拟低音",
     "virtualBassDesc": "通过谐波生成和心理声学技术，在小尺寸扬声器上模拟低频下潜。",
     "virtualBassEnvelopeRate": "响应速度",
@@ -148,5 +148,17 @@
     "clearLoadingImage": "清除加载图片",
     "diffSurroundingEffect": "差分环绕",
     "diffSurroundingEffectDesc": "延迟MS的Side通道。模拟宽阔声场",
-    "delayMs": "延迟时间(ms)"
+    "delayMs": "延迟时间(ms)",
+    "presetLabel": "预设",
+    "presetFlat": "平直",
+    "presetBassBoost": "低音增强",
+    "presetTrebleBoost": "高音增强",
+    "presetVocal": "人声",
+    "presetRock": "摇滚",
+    "presetPop": "流行",
+    "presetJazz": "爵士",
+    "presetClassical": "古典",
+    "presetElectronic": "电子",
+    "presetAcoustic": "原声",
+    "presetCustom": "自定义"
 }

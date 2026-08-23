@@ -24,36 +24,122 @@ enum OutputMode {
   disabled,
 }
 
-class IIREqualizerCoeffs {
-  final int index;
-  final int startFreq;
-  final int endFreq;
-  final int gain;
+enum EQFilterType { pk, lsc, hsc }
 
-  IIREqualizerCoeffs(this.index, this.startFreq, this.endFreq, this.gain);
-
-  void _packInto(ByteData data, int offset) {
-    data.setInt32(offset, index, Endian.host);
-    data.setInt32(offset + 4, startFreq, Endian.host);
-    data.setInt32(offset + 8, endFreq, Endian.host);
-    data.setInt32(offset + 12, gain, Endian.host);
+extension EQFilterTypeX on EQFilterType {
+  String get label {
+    switch (this) {
+      case EQFilterType.pk: return 'PK';
+      case EQFilterType.lsc: return 'LSC';
+      case EQFilterType.hsc: return 'HSC';
+    }
   }
 
-  static const int sizeInBytes = 16;
+  static EQFilterType fromLabel(String s) {
+    switch (s.toUpperCase()) {
+      case 'LSC': return EQFilterType.lsc;
+      case 'HSC': return EQFilterType.hsc;
+      default: return EQFilterType.pk;
+    }
+  }
 }
 
-/* now IIR Equalizer Effect only support 10 bands, so coeffs length must be 10*/
-Uint8List serializeIIREqualizerCoeffs(List<IIREqualizerCoeffs> coeffs) {
-  final int length = coeffs.length;
-  if (length != 10) {
-    throw ArgumentError('coeffs length must be 10');
+class EQFilter {
+  final bool enabled;
+  final EQFilterType type;
+  final int fc;       // Hz
+  final double gain;  // dB
+  final double q;
+
+  const EQFilter({
+    this.enabled = true,
+    this.type = EQFilterType.pk,
+    this.fc = 1000,
+    this.gain = 0,
+    this.q = 1.0,
+  });
+
+  EQFilter copyWith({bool? enabled, EQFilterType? type, int? fc, double? gain, double? q}) {
+    return EQFilter(
+      enabled: enabled ?? this.enabled,
+      type: type ?? this.type,
+      fc: fc ?? this.fc,
+      gain: gain ?? this.gain,
+      q: q ?? this.q,
+    );
   }
-  final ByteData data = ByteData(length * IIREqualizerCoeffs.sizeInBytes);
-  for (int i = 0; i < length; i++) {
-    coeffs[i]._packInto(data, i * IIREqualizerCoeffs.sizeInBytes);
-  }
-  return data.buffer.asUint8List();
 }
+
+class IIREqualizerConfig {
+  final double preamp;        // dB
+  final List<EQFilter> filters;
+
+  const IIREqualizerConfig({this.preamp = 0, this.filters = const []});
+
+  IIREqualizerConfig copyWith({double? preamp, List<EQFilter>? filters}) {
+    return IIREqualizerConfig(
+      preamp: preamp ?? this.preamp,
+      filters: filters ?? this.filters,
+    );
+  }
+
+  String toParamString() {
+    final sb = StringBuffer();
+    sb.writeln('Preamp: ${_fmt(preamp)} dB');
+    for (int i = 0; i < filters.length; i++) {
+      final f = filters[i];
+      sb.writeln('Filter ${i + 1}: ${f.enabled ? "ON" : "OFF"} ${f.type.label} '
+          'Fc ${f.fc} Hz Gain ${_fmt(f.gain)} dB Q ${_fmt(f.q)}');
+    }
+    return sb.toString().trimRight();
+  }
+
+  static String _fmt(double v) {
+    if (v == v.roundToDouble()) return v.toStringAsFixed(1);
+    return v.toStringAsFixed(2);
+  }
+
+  static IIREqualizerConfig fromParamString(String text) {
+    double preamp = 0;
+    final filters = <EQFilter>[];
+    final preampRe = RegExp(r'^Preamp:\s*(-?\d+(?:\.\d+)?)\s*dB', caseSensitive: false);
+    final filterRe = RegExp(
+        r'^Filter\s+\d+\s*:\s*(ON|OFF)\s+(\w+)\s+Fc\s+(\d+)\s*Hz\s+Gain\s+(-?\d+(?:\.\d+)?)\s*dB\s+Q\s+(\d+(?:\.\d+)?)',
+        caseSensitive: false);
+    for (final raw in text.split('\n')) {
+      final line = raw.trim();
+      if (line.isEmpty) continue;
+      final pm = preampRe.firstMatch(line);
+      if (pm != null) {
+        preamp = double.tryParse(pm.group(1)!) ?? 0;
+        continue;
+      }
+      final fm = filterRe.firstMatch(line);
+      if (fm != null) {
+        filters.add(EQFilter(
+          enabled: fm.group(1)!.toUpperCase() == 'ON',
+          type: EQFilterTypeX.fromLabel(fm.group(2)!),
+          fc: int.tryParse(fm.group(3)!) ?? 1000,
+          gain: double.tryParse(fm.group(4)!) ?? 0,
+          q: double.tryParse(fm.group(5)!) ?? 1.0,
+        ));
+      }
+    }
+    return IIREqualizerConfig(preamp: preamp, filters: filters);
+  }
+}
+
+const String kDefaultIIREqualizerParamString = '''Preamp: 0.0 dB
+Filter 1: ON PK Fc 31 Hz Gain 0.0 dB Q 1.00
+Filter 2: ON PK Fc 62 Hz Gain 0.0 dB Q 1.00
+Filter 3: ON PK Fc 125 Hz Gain 0.0 dB Q 1.00
+Filter 4: ON PK Fc 250 Hz Gain 0.0 dB Q 1.00
+Filter 5: ON PK Fc 500 Hz Gain 0.0 dB Q 1.00
+Filter 6: ON PK Fc 1000 Hz Gain 0.0 dB Q 1.00
+Filter 7: ON PK Fc 2000 Hz Gain 0.0 dB Q 1.00
+Filter 8: ON PK Fc 4000 Hz Gain 0.0 dB Q 1.00
+Filter 9: ON PK Fc 8000 Hz Gain 0.0 dB Q 1.00
+Filter 10: ON PK Fc 16000 Hz Gain 0.0 dB Q 1.00''';
 
 Uint8List serializeScriptParams(List<ScriptParam> params) {
   final ByteData data = ByteData(16 * 68); // always 16 entries: name[64] + value(4)
@@ -242,7 +328,7 @@ enum ParamID {
   lowcatEffectEnabled(bool),
   lowcatEffectCutoffFrequency(int),
   iirEqualizerEffectEnabled(bool),
-  iirEqualizerEffectCoeffs(List<IIREqualizerCoeffs>),
+  iirEqualizerEffectConfig(String),
   virtualbassEffectEnabled(bool),
   virtualbassEffectEnvelopeRate(int),
   virtualbassEffectMidGain(double),
@@ -410,18 +496,7 @@ class AudioConfig {
     ParamID.lookAheadSoftLimitEffectEnabled: false,
     ParamID.lowcatEffectEnabled: false,
     ParamID.lowcatEffectCutoffFrequency: 120,
-    ParamID.iirEqualizerEffectCoeffs: <IIREqualizerCoeffs>[
-      IIREqualizerCoeffs(0, 20, 63, 0),
-      IIREqualizerCoeffs(1, 63, 125, 0),
-      IIREqualizerCoeffs(2, 125, 250, 0),
-      IIREqualizerCoeffs(3, 250, 500, 0),
-      IIREqualizerCoeffs(4, 500, 1000, 0),
-      IIREqualizerCoeffs(5, 1000, 2000, 0),
-      IIREqualizerCoeffs(6, 2000, 4000, 0),
-      IIREqualizerCoeffs(7, 4000, 8000, 0),
-      IIREqualizerCoeffs(8, 8000, 16000, 0),
-      IIREqualizerCoeffs(9, 16000, 20000, 0),
-    ],
+    ParamID.iirEqualizerEffectConfig: kDefaultIIREqualizerParamString,
     ParamID.iirEqualizerEffectEnabled: false,
     ParamID.virtualbassEffectEnabled: false,
     ParamID.virtualbassEffectEnvelopeRate: 40,
@@ -465,15 +540,6 @@ class AudioConfig {
           values[paramID] = jsonValue as bool;
         } else if (paramID.type == String) {
           values[paramID] = jsonValue as String;
-        } else if (paramID.type == List<IIREqualizerCoeffs>) {
-          values[paramID] = List<IIREqualizerCoeffs>.from(
-            jsonValue.map((json) => IIREqualizerCoeffs(
-              json['index'],
-              json['startFreq'],
-              json['endFreq'],
-              json['gain'],
-            )),
-          );
         } else if (paramID.type == List<ScriptParam>) {
           values[paramID] = List<ScriptParam>.from(
             jsonValue.map((json) => ScriptParam.fromJson(json)),
@@ -499,13 +565,6 @@ class AudioConfig {
         json[paramID.name] = value as int;
       } else if (paramID.type == double) {
         json[paramID.name] = value as double;
-      } else if (paramID.type == List<IIREqualizerCoeffs>) {
-        json[paramID.name] = value.map((coeffs) => {
-          'index': coeffs.index,
-          'startFreq': coeffs.startFreq,
-          'endFreq': coeffs.endFreq,
-          'gain': coeffs.gain,
-        }).toList();
       } else if (paramID.type == List<ScriptParam>) {
         json[paramID.name] = value.map((p) => p.toJson()).toList();
       } else {

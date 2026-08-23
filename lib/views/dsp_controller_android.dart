@@ -478,9 +478,9 @@ class _DSPControllerState extends State<DSPController> {
                 onToggleExpand: () => _viewModel.toggleExpanded('equalizer'),
                 onToggle: (v) => _viewModel.update(ParamID.iirEqualizerEffectEnabled, v),
                 children: [
-                  EqSliderPanel(
-                    bands: _viewModel.get<List<IIREqualizerCoeffs>>(ParamID.iirEqualizerEffectCoeffs),
-                    onBandsChanged: (v) => _viewModel.update(ParamID.iirEqualizerEffectCoeffs, v),
+                  GraphicEqPanel(
+                    config: _viewModel.get<String>(ParamID.iirEqualizerEffectConfig),
+                    onConfigChanged: (v) => _viewModel.update<String>(ParamID.iirEqualizerEffectConfig, v),
                     enabled: _viewModel.get<bool>(ParamID.iirEqualizerEffectEnabled),
                   ),
                   const SizedBox(height: 16),

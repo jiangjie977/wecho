@@ -53,7 +53,7 @@
     "lowcatDesc": "Speaker mode only. Cuts frequencies below the cutoff to create more headroom for louder output.",
     "cutoffFrequency": "Cutoff Frequency",
     "equalizer":"IIR equalizer",
-    "equalizerDesc":"a simple implemention of IIR equalizer, supported 10 band",
+    "equalizerDesc":"Graphic equalizer, supported 1-64 bands.",
     "virtualBass": " Wecho Virtual Bass",
     "virtualBassDesc": "Simulate low-frequency extension on small speakers through harmonic generation and psychoacoustics.",
     "virtualBassEnvelopeRate": "Response Rate",
@@ -171,5 +171,17 @@
     "clearLoadingImage": "Clear Loading Image",
     "diffSurroundingEffect": "Diff Surrounding Effect",
     "diffSurroundingEffectDesc": "Delay MS of Side Channel. Simulates wide sound field",
-    "delayMs": "Delay MS"
+    "delayMs": "Delay MS",
+    "presetLabel": "Preset",
+    "presetFlat": "Flat",
+    "presetBassBoost": "Bass Boost",
+    "presetTrebleBoost": "Treble Boost",
+    "presetVocal": "Vocal",
+    "presetRock": "Rock",
+    "presetPop": "Pop",
+    "presetJazz": "Jazz",
+    "presetClassical": "Classical",
+    "presetElectronic": "Electronic",
+    "presetAcoustic": "Acoustic",
+    "presetCustom": "Custom"
 }

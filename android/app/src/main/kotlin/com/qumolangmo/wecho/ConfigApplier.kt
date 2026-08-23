@@ -58,7 +58,7 @@ object ConfigApplier {
         LOWCUT_EFFECT_ENABLED,
         LOWCUT_EFFECT_CUTOFF_FREQUENCY,
         IIR_EQUALIZER_EFFECT_ENABLED,
-        IIR_EQUALIZER_EFFECT_COEFFS,
+        IIR_EQUALIZER_EFFECT_CONFIG,
         VIRTUALBASS_EFFECT_ENABLED,
         VIRTUALBASS_EFFECT_ENVELOPE_RATE,
         VIRTUALBASS_EFFECT_MID_GAIN,
@@ -164,19 +164,7 @@ object ConfigApplier {
             config.optInt("lowcatEffectCutoffFrequency", 0).let { audioProcess.setEffectParam(EffectParam.LOWCUT_EFFECT_CUTOFF_FREQUENCY.ordinal, it, true) }
             config.optBoolean("lowcatEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.LOWCUT_EFFECT_ENABLED.ordinal, it, true) }
 
-            config.optJSONArray("iirEqualizerEffectCoeffs")?.let { coeffs ->
-                val buffer = java.nio.ByteBuffer.allocate(coeffs.length() * 16).apply {
-                    order(java.nio.ByteOrder.LITTLE_ENDIAN)
-                }
-                for (i in 0 until coeffs.length()) {
-                    val coeff = coeffs.getJSONObject(i)
-                    buffer.putInt(coeff.optInt("index", 0))
-                    buffer.putInt(coeff.optInt("start_freq", 0))
-                    buffer.putInt(coeff.optInt("end_freq", 0))
-                    buffer.putInt(coeff.optInt("gain", 0))
-                }
-                audioProcess.setEffectParam(EffectParam.IIR_EQUALIZER_EFFECT_COEFFS.ordinal, buffer.array(), true)
-            }
+            config.optString("iirEqualizerEffectConfig", "").let { audioProcess.setEffectParam(EffectParam.IIR_EQUALIZER_EFFECT_CONFIG.ordinal, it, true) }
             config.optBoolean("iirEqualizerEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.IIR_EQUALIZER_EFFECT_ENABLED.ordinal, it, true) }
 
             config.optDouble("virtualbassEffectMidGain", 0.5).let { audioProcess.setEffectParam(EffectParam.VIRTUALBASS_EFFECT_MID_GAIN.ordinal, it, true) }
