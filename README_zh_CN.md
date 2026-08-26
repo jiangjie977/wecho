@@ -6,6 +6,17 @@
 
 **[English](README.md)**
 
+## 项目截图
+<div align="center">
+    <table>
+        <tr>
+            <td align="center"><img src="assets/part1.jpg" width="230"><br></td>
+            <td align="center"><img src="assets/part2.jpg" width="230"><br></td>
+            <td align="center"><img src="assets/part3.jpg" width="230"><br></td>
+        </tr>
+    </table>
+</div>
+
 ## 项目简介
 
 WEcho 是一款功能丰富的 **Android 全局音效处理器**，无需 root，开箱即用。配合shizuku兼容性更强
@@ -26,6 +37,7 @@ WEcho 是一款功能丰富的 **Android 全局音效处理器**，无需 root�
 
 ### 捕获设置
 - **扬声器/耳机配置文件自适应**：关闭则使用统一配置，开启则根据当前设备自动切换配置文件
+- **省电模式**: 检测到系统60s静音后，停止wecho处理，节省电量
 - **应用黑名单**：可以把wecho无法处理的app加入进去，防止日常使用的时候没有声音
 
 ### 音效处理
@@ -48,7 +60,7 @@ WEcho 是一款功能丰富的 **Android 全局音效处理器**，无需 root�
   - 谐波增益系数
 - **多频段 Limiter**：自动进行限幅，大幅改善破音情况
 - **低频切除**：扬声器模式专用，切除截止频率以下的低频，留出余量驱动更大响度
-- **IIR 均衡器**：简单的 IIR 均衡器实现，支持固定 10 段调节
+- **IIR 均衡器**：支持1-64段频响图EQ，可选峰值和搁架滤波。
 - **FDN 混响**：为音频信号添加空间深度和环境氛围，使用 FDN 混响算法。
   - 矩阵类型：选择混响的矩阵类型，影响混响的音色和空间感
   - 混合比例：调整干湿比
@@ -59,6 +71,7 @@ WEcho 是一款功能丰富的 **Android 全局音效处理器**，无需 root�
   - 调制频率：混响拖尾的音色染色效果，和调制深度共同影响相位变化速率
   - 预延时：混响的开始时间，影响混响的延迟效果
 - **wecho DSP**：以c为脚本语言，可编写自定义的音频处理效果。用户可将wecho dsp模板代码提供给ai，让其按照用户的意愿生成想要的效果代码。
+- **设备模拟**：使用AutoEQ收录的耳机频响数据库，用户选定自己的耳机后，可以模拟数据库中存在的其他耳机的听感。（声音仅作参考，不代表实际品质）
 ## 技术栈
 
 Dart(Flutter) + Kotlin + C++
@@ -99,7 +112,6 @@ Dart(Flutter) + Kotlin + C++
     adb shell appops set com.qumolangmo.wecho PROJECT_MEDIA allow
     ```
 
-
 ## 依赖
 
 ### C++:
@@ -120,9 +132,14 @@ Dart(Flutter) + Kotlin + C++
 - **flutter_code_editer**: 为手机端编辑c代码提供支持
 - **flutter_highlight**: 那当然是必不可少的代码高亮了
 
+### Other:
+
+- **AutoEQ**：为设备模拟提供频响数据支持
+- **shizuku**: 用于为wecho授予DUMP和PROJECT_MEDIA
+
 ## 贡献
 
-欢迎提交 Issue！
+欢迎提交 Issue 和 PR ！
 
 ## 待完善功能
 

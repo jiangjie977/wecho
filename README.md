@@ -6,6 +6,18 @@
 
 **[中文](README_zh_CN.md)**
 
+## Project Screenshots
+<div align="center">
+    <table>
+        <tr>
+            <td align="center"><img src="assets/part1.jpg" width="230"><br></td>
+            <td align="center"><img src="assets/part2.jpg" width="230"><br></td>
+            <td align="center"><img src="assets/part3.jpg" width="230"><br></td>
+        </tr>
+    </table>
+</div>
+
+
 ## Project Introduction
 
 WEcho is a feature-rich **Android Global Audio Effect Processor** that works out-of-the-box without requiring root. With Shizuku support, compatibility is even stronger.
@@ -25,6 +37,7 @@ It uses **Native C++ for DSP algorithms** at the core and Flutter for the modern
 
 ### Capture Settings
 - **Speaker/Headphone Profile Adaptive**: Off for unified configuration, on for automatic profile switching based on current device. 
+- **Power Saving**: Stop processing WEcho after 60 seconds of silence to save battery life.
 - **Blacklist**: Exclude unsupported apps to prevent audio from being muted.
 
 ### Audio Effects
@@ -43,9 +56,10 @@ It uses **Native C++ for DSP algorithms** at the core and Flutter for the modern
 - **Virtual Bass**: Optimized for speaker playback, enhance bass perception
 - **Multi-Band Limiter**: Automatic limiting, significantly improves distortion
 - **Low Cut**: Speaker mode only, cut low frequencies below cutoff to allow louder output
-- **IIR Equalizer**: Simple IIR equalizer with fixed 10-band adjustment
+- **IIR Equalizer**: 1-64-band IIR equalizer with peak and shelf filters
 - **FDN Reverb**: FDN reverb effect with adjustable parameters
 - **WEcho DSP**: Generate custom audio effects with C language
+- **Device Simulation**: Use AutoEQ database to simulate other headphones' sound. (Only for reference, not actual quality).
 
 ##### Tech Stack
 
@@ -106,6 +120,11 @@ Go to the [Releases](https://github.com/qumolangmo/wecho/releases) page to downl
 - **dartz**: Functional programming, eliminate try-catch
 - **flutter_code_editer**: Code editor for Flutter
 - **flutter_highlight**: Code highlighting for Flutter
+
+### Other:
+
+- **AutoEQ**: Database for device simulation
+- **shizuku**: Root permission for WEcho to access DUMP and PROJECT_MEDIA permissions
 
 ## Contribution
 
