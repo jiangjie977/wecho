@@ -263,6 +263,49 @@ class _GraphicEqPanelState extends State<GraphicEqPanel> {
     _emit(_config.copyWith(filters: filters));
   }
 
+  void _sortBandsByFreq() {
+    final filters = _config.filters;
+    if (filters.length < 2) return;
+
+    var sorted = true;
+    for (var j = 1; j < filters.length; j++) {
+      if (filters[j].fc < filters[j - 1].fc) {
+        sorted = false;
+        break;
+      }
+    }
+    if (sorted) return;
+
+    final selected = filters[_selectedBand.clamp(0, filters.length - 1)];
+    final reordered = List<EQFilter>.from(filters)
+      ..sort((a, b) => a.fc.compareTo(b.fc));
+    _selectedBand = reordered.indexOf(selected);
+    _emit(_config.copyWith(filters: reordered));
+  }
+
+  Future<void> _showValueDialog({
+    required String title,
+    required String initial,
+    required String suffix,
+    required double min,
+    required double max,
+    required ValueChanged<double> onConfirm,
+  }) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => _ValueEditDialog(
+        title: title,
+        initial: initial,
+        suffix: suffix,
+        rangeHint: '$min - $max',
+      ),
+    );
+    if (confirmed == true && mounted) {
+      final v = double.tryParse(_ValueEditDialog.lastInput.trim());
+      if (v != null) onConfirm(v.clamp(min, max));
+    }
+  }
+
   void _addBand() {
     if (_config.filters.length >= _bandMax) return;
     final filters = List<EQFilter>.from(_config.filters);
@@ -288,7 +331,6 @@ class _GraphicEqPanelState extends State<GraphicEqPanel> {
     _emit(_config.copyWith(filters: filters));
   }
 
-  /// Removes the band at [i]. Keeps selection valid.
   void _removeBand(int i) {
     if (_config.filters.length <= _bandMin) return;
     final filters = List<EQFilter>.from(_config.filters)..removeAt(i);
@@ -744,7 +786,8 @@ class _GraphicEqPanelState extends State<GraphicEqPanel> {
             ],
           ),
           const SizedBox(height: 4),
-          // Freq slider (log scale 20-20000).
+          // Freq slider (log scale 20-20000). Tapping the label/value opens
+          // a numeric edit dialog; releasing the slider re-sorts the tabs.
           _buildSliderRow(
             cs: cs,
             label: 'Freq',
@@ -755,8 +798,20 @@ class _GraphicEqPanelState extends State<GraphicEqPanel> {
             divisions: _plotPoints - 1,
             color: cs.secondary,
             onChanged: (v) => _updateFilter(i, f.copyWith(fc: _sliderToFreq(v).round())),
+            onChangeEnd: (_) => _sortBandsByFreq(),
+            onLabelTap: () => _showValueDialog(
+              title: 'Freq',
+              initial: f.fc.toString(),
+              suffix: ' Hz',
+              min: _fMin,
+              max: _fMax,
+              onConfirm: (v) {
+                _updateFilter(i, f.copyWith(fc: v.round()));
+                _sortBandsByFreq();
+              },
+            ),
           ),
-          // Gain slider.
+
           _buildSliderRow(
             cs: cs,
             label: 'Gain',
@@ -764,11 +819,18 @@ class _GraphicEqPanelState extends State<GraphicEqPanel> {
             value: f.gain,
             min: _gainMin,
             max: _gainMax,
-            divisions: ((_gainMax - _gainMin) * 2).round(),
+            divisions: ((_gainMax - _gainMin) * 10).round(),
             color: cs.primary,
             onChanged: (v) => _updateFilter(i, f.copyWith(gain: v)),
+            onLabelTap: () => _showValueDialog(
+              title: 'Gain',
+              initial: f.gain.toStringAsFixed(1),
+              suffix: ' dB',
+              min: _gainMin,
+              max: _gainMax,
+              onConfirm: (v) => _updateFilter(i, f.copyWith(gain: v)),
+            ),
           ),
-          // Q slider.
           _buildSliderRow(
             cs: cs,
             label: 'Q',
@@ -779,6 +841,14 @@ class _GraphicEqPanelState extends State<GraphicEqPanel> {
             divisions: ((_qMax - _qMin) * 10).round(),
             color: cs.tertiary,
             onChanged: (v) => _updateFilter(i, f.copyWith(q: v)),
+            onLabelTap: () => _showValueDialog(
+              title: 'Q',
+              initial: f.q.toStringAsFixed(2),
+              suffix: '',
+              min: _qMin,
+              max: _qMax,
+              onConfirm: (v) => _updateFilter(i, f.copyWith(q: v)),
+            ),
           ),
         ],
       ),
@@ -795,21 +865,36 @@ class _GraphicEqPanelState extends State<GraphicEqPanel> {
     required int divisions,
     required Color color,
     required ValueChanged<double> onChanged,
+    ValueChanged<double>? onChangeEnd,
+    VoidCallback? onLabelTap,
   }) {
+    Widget leading = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          width: 40,
+          child: Text(label,
+              style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+        ),
+        SizedBox(
+          width: 56,
+          child: Text(valueText,
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color)),
+        ),
+      ],
+    );
+    if (onLabelTap != null) {
+      leading = GestureDetector(
+        onTap: onLabelTap,
+        behavior: HitTestBehavior.opaque,
+        child: MouseRegion(cursor: SystemMouseCursors.click, child: leading),
+      );
+    }
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
         children: [
-          SizedBox(
-            width: 40,
-            child: Text(label,
-                style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
-          ),
-          SizedBox(
-            width: 56,
-            child: Text(valueText,
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color)),
-          ),
+          leading,
           Expanded(
             child: SliderTheme(
               data: SliderTheme.of(context).copyWith(
@@ -825,6 +910,7 @@ class _GraphicEqPanelState extends State<GraphicEqPanel> {
                 max: max,
                 divisions: divisions,
                 onChanged: widget.enabled ? onChanged : null,
+                onChangeEnd: onChangeEnd,
               ),
             ),
           ),
@@ -841,5 +927,75 @@ class _GraphicEqPanelState extends State<GraphicEqPanel> {
 
   static double _sliderToFreq(double t) {
     return math.exp(math.log(_fMin) + t * (math.log(_fMax) - math.log(_fMin)));
+  }
+}
+
+class _ValueEditDialog extends StatefulWidget {
+  final String title;
+  final String initial;
+  final String suffix;
+  final String rangeHint;
+
+  static String lastInput = '';
+
+  const _ValueEditDialog({
+    required this.title,
+    required this.initial,
+    required this.suffix,
+    required this.rangeHint,
+  });
+
+  @override
+  State<_ValueEditDialog> createState() => _ValueEditDialogState();
+}
+
+class _ValueEditDialogState extends State<_ValueEditDialog> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initial);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit(BuildContext ctx, bool confirmed) {
+    if (confirmed) {
+      _ValueEditDialog.lastInput = _controller.text;
+    }
+    Navigator.of(ctx).pop(confirmed);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.title),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        keyboardType:
+            const TextInputType.numberWithOptions(decimal: true, signed: true),
+        decoration: InputDecoration(
+          suffixText: widget.suffix,
+          hintText: widget.rangeHint,
+        ),
+        onSubmitted: (_) => _submit(context, true),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () => _submit(context, true),
+          child: const Text('OK'),
+        ),
+      ],
+    );
   }
 }

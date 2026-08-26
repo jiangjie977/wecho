@@ -19,6 +19,7 @@ export 'app_header.dart';
 export 'app_blacklist_page.dart';
 export 'config_manager_page.dart';
 export 'control_card.dart';
+export 'device_simulation_card.dart';
 export 'eq_biquad.dart';
 export 'generic_control_card.dart';
 export 'graphic_eq_panel.dart';

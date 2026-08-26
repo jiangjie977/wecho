@@ -347,7 +347,9 @@ enum ParamID {
   scriptEffectParams(List<ScriptParam>),
   scriptEffectCode(String),
   diffSurroundingEffectEnabled(bool),
-  diffSurroundingEffectDelayMs(int);
+  diffSurroundingEffectDelayMs(int),
+  deviceSimulationEffectEnabled(bool),
+  deviceSimulationEffectConfig(String);
 
   final Type type;
 
@@ -517,6 +519,8 @@ class AudioConfig {
     ParamID.scriptEffectParams: <ScriptParam>[],
     ParamID.diffSurroundingEffectEnabled: false,
     ParamID.diffSurroundingEffectDelayMs: 3,
+    ParamID.deviceSimulationEffectEnabled: false,
+    ParamID.deviceSimulationEffectConfig: '',
   };
 
   dynamic operator [](ParamID key) => _values[key];

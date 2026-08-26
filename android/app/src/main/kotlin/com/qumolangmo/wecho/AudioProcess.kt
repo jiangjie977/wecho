@@ -51,6 +51,7 @@ class AudioProcess private constructor() {
     private external fun nativeSetEffectParam(paramId: Int, value: Any, initialize: Boolean): Unit
     private external fun nativeProcess(input: FloatArray, output: FloatArray, length: Int): Unit
     private external fun nativeInit(sampleRate: Int, samplesPerChannel: Int, channels: Int, context: Context): Unit
+    private external fun nativeGetDeviceSimulationFreqResponse(): FloatArray?
 
     var onScriptCompileError: ((String) -> Unit)? = null
 
@@ -69,6 +70,10 @@ class AudioProcess private constructor() {
 
     fun setEffectParam(paramId: Int, value: Any, initialize: Boolean = false) {
         nativeSetEffectParam(paramId, value, initialize)
+    }
+
+    fun getDeviceSimulationFreqResponse(): FloatArray? {
+        return nativeGetDeviceSimulationFreqResponse()
     }
 
     fun notifyScriptCompileError(error: String) {

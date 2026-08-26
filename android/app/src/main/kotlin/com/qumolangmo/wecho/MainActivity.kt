@@ -143,6 +143,14 @@ class MainActivity : FlutterActivity() {
                         result.error("ERROR", e.message, null)
                     }
                 }
+                "getDeviceSimulationFreqResponse" -> {
+                    try {
+                        val response = AudioProcess.getInstance().getDeviceSimulationFreqResponse()
+                        result.success(response?.map { it.toDouble() })
+                    } catch (e: Exception) {
+                        result.error("ERROR", e.message, null)
+                    }
+                }
                 "reloadConfig" -> {
                     try {
                         val device = call.argument<String>("device")
@@ -251,6 +259,20 @@ class MainActivity : FlutterActivity() {
                             runOnUiThread { result.error("ERROR", e.message, null) }
                         }
                     }.start()
+                }
+                "readAssetFile" -> {
+                    try {
+                        val relPath = call.argument<String>("relPath")
+                        if (relPath == null) {
+                            result.error("INVALID_ARGS", "Missing relPath", null)
+                        } else {
+                            val text = assets.open(relPath)
+                                .bufferedReader(Charsets.UTF_8).use { it.readText() }
+                            result.success(text)
+                        }
+                    } catch (e: Exception) {
+                        result.error("ERROR", e.message, null)
+                    }
                 }
                 else -> result.notImplemented()
             }

@@ -183,5 +183,21 @@
     "presetClassical": "Classical",
     "presetElectronic": "Electronic",
     "presetAcoustic": "Acoustic",
-    "presetCustom": "Custom"
+    "presetCustom": "Custom",
+    "deviceSimulationEffect": "Device Simulation",
+    "deviceSimulationEffectDesc": "Equalize current headphone to the frequency response of a target headphone",
+    "currentHeadphone": "Current Headphone",
+    "simulateHeadphone": "Simulated Headphone",
+    "currentHeadphoneHint": "Required. Type a prefix to match devices from the index",
+    "simulateHeadphoneHint": "Optional. Type a prefix to match devices from the index",
+    "deviceUnavailable": "No matching device in the index",
+    "load": "Load",
+    "unlock": "Unlock",
+    "unlockDesc": "Allow selecting headphones with different rig/type from the current headphone",
+    "unlockImperfect": "Unlock imperfect-match candidates",
+    "randomSimulate": "Random Simulate",
+    "cantPerfectlySimulate": "Cannot simulate perfectly",
+    "deviceSimulationHint": "Entering only the current headphone equalizes it to a flat response",
+    "actualFreqResponse": "Actual Response",
+    "indexLoadFailed": "Failed to load device index"
 }

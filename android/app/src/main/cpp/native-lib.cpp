@@ -21,7 +21,9 @@
 #include <string>
 #include "enum.h"
 #include <android/log.h>
+#include <android/asset_manager_jni.h>
 #include "utils/debug.hpp"
+#include "utils/frequencyResponseReader.hpp"
 
 #include "AudioProcessor.hpp"
 
@@ -62,6 +64,7 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
             case REVERB_EFFECT_ENABLED:
             case SCRIPT_EFFECT_ENABLED:
             case DIFF_SURROUNDING_EFFECT_ENABLED:
+            case DEVICE_SIMULATION_EFFECT_ENABLED:
             {
 
                 bool boolValue = env->IsInstanceOf(value, env->FindClass("java/lang/Boolean"));
@@ -176,30 +179,17 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeSetEffectParam(
                 break;
             }
             case CONVOLVE_EFFECT_IR_PATH:
-            {
-                bool isString = env->IsInstanceOf(value, env->FindClass("java/lang/String"));
-                if (isString) {
-                    jmethodID stringValueMethod = env->GetMethodID(valueClass, "toString", "()Ljava/lang/String;");
-                    jstring jValue = (jstring)env->CallObjectMethod(value, stringValueMethod);
-                    const char* jValueChars = env->GetStringUTFChars(jValue, nullptr);
-                    std::string ir_path(jValueChars);
-                    env->ReleaseStringUTFChars(jValue, jValueChars);
-                    dispatch(ir_path);
-                }
-                break;
-            }
             case IIR_EQUALIZER_EFFECT_CONFIG:
+            case DEVICE_SIMULATION_EFFECT_CONFIG:
             {
                 bool isString = env->IsInstanceOf(value, env->FindClass("java/lang/String"));
                 if (isString) {
                     jmethodID stringValueMethod = env->GetMethodID(valueClass, "toString", "()Ljava/lang/String;");
                     jstring jValue = (jstring)env->CallObjectMethod(value, stringValueMethod);
                     const char* jValueChars = env->GetStringUTFChars(jValue, nullptr);
-                    std::string coeffs(jValueChars);
+                    std::string str_val(jValueChars);
                     env->ReleaseStringUTFChars(jValue, jValueChars);
-                    dispatch(coeffs);
-                } else {
-                    LOG_E("IIR_EQUALIZER_EFFECT_CONFIG value is not String");
+                    dispatch(str_val);
                 }
                 break;
             }
@@ -224,6 +214,17 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeInit(
 
     try {
         jclass contextClass = env->FindClass("android/content/Context");
+
+        jmethodID getAssets = env->GetMethodID(contextClass, "getAssets", "()Landroid/content/res/AssetManager;");
+        if (getAssets != nullptr) {
+            jobject assetMgrObj = env->CallObjectMethod(context, getAssets);
+            AAssetManager* mgr = AAssetManager_fromJava(env, assetMgrObj);
+            env->DeleteLocalRef(assetMgrObj);
+            if (mgr != nullptr) {
+                FrequencyResponseReader::setAssetManager(mgr);
+            }
+        }
+
         jmethodID getFilesDir = env->GetMethodID(contextClass, "getFilesDir", "()Ljava/io/File;");
 
         jobject file = env->CallObjectMethod(context, getFilesDir);
@@ -286,6 +287,30 @@ Java_com_qumolangmo_wecho_AudioProcess_nativeProcess(
         env->ReleaseFloatArrayElements(outputArray, output, 0);
     } catch (const std::exception& e) {
         LOG_E("Error in nativeProcess: %s", e.what());
+    }
+}
+
+JNIEXPORT jfloatArray JNICALL
+Java_com_qumolangmo_wecho_AudioProcess_nativeGetDeviceSimulationFreqResponse(
+        JNIEnv* env,
+        jobject thiz) {
+
+    try {
+        auto& audioProcessor = AudioProcessor::getInstance();
+        const auto& response = audioProcessor.getDeviceSimulationFreqResponse();
+
+        jsize len = (jsize)response.size();
+        jfloatArray result = env->NewFloatArray(len);
+        if (result == nullptr) {
+            return nullptr;
+        }
+        if (len > 0) {
+            env->SetFloatArrayRegion(result, 0, len, response.data());
+        }
+        return result;
+    } catch (const std::exception& e) {
+        LOG_E("Error in nativeGetDeviceSimulationFreqResponse: %s", e.what());
+        return nullptr;
     }
 }
 

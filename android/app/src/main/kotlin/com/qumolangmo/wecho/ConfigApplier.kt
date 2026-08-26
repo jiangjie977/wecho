@@ -77,7 +77,9 @@ object ConfigApplier {
         SCRIPT_EFFECT_PARAMS,
         SCRIPT_EFFECT_CODE,
         DIFF_SURROUNDING_EFFECT_ENABLED,
-        DIFF_SURROUNDING_EFFECT_DELAY_MS
+        DIFF_SURROUNDING_EFFECT_DELAY_MS,
+        DEVICE_SIMULATION_EFFECT_ENABLED,
+        DEVICE_SIMULATION_EFFECT_CONFIG
     }
 
     /* reads the Flutter-side "auto output switch" setting. Defaults to true. */
@@ -204,6 +206,9 @@ object ConfigApplier {
 
             config.optInt("diffSurroundingEffectDelayMs", 0).let { audioProcess.setEffectParam(EffectParam.DIFF_SURROUNDING_EFFECT_DELAY_MS.ordinal, it, true) }
             config.optBoolean("diffSurroundingEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.DIFF_SURROUNDING_EFFECT_ENABLED.ordinal, it, true) }
+
+            config.optString("deviceSimulationEffectConfig", "").let { audioProcess.setEffectParam(EffectParam.DEVICE_SIMULATION_EFFECT_CONFIG.ordinal, it, true) }
+            config.optBoolean("deviceSimulationEffectEnabled", false).let { audioProcess.setEffectParam(EffectParam.DEVICE_SIMULATION_EFFECT_ENABLED.ordinal, it, true) }
 
             Log.i(TAG, "Config applied successfully")
         } catch (e: Exception) {

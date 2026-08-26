@@ -47,6 +47,7 @@ class DSPControllerViewModel {
   bool reverbExpanded = false;
   bool scriptExpanded = false;
   bool diffSurroundingEffectExpanded = false;
+  bool deviceSimulationExpanded = false;
 
   bool autoOutputSwitch = true;
   bool powerSaving = true;
@@ -138,6 +139,16 @@ class DSPControllerViewModel {
   }
 
   T get<T>(ParamID id) => _config[id] as T;
+
+  Future<List<double>?> getDeviceSimulationFreqResponse() async {
+    try {
+      final result = await _channel.invokeMethod<dynamic>('getDeviceSimulationFreqResponse');
+      if (result == null) return null;
+      return (result as List).cast<num>().map((e) => e.toDouble()).toList();
+    } on PlatformException {
+      return null;
+    }
+  }
 
   Future<Either<AppError, void>> _invokeMethod(String method, [dynamic arguments]) async {
     try {
@@ -385,6 +396,7 @@ class DSPControllerViewModel {
     reverbExpanded = _prefs.getBool('reverbExpanded') ?? false;
     scriptExpanded = _prefs.getBool('scriptExpanded') ?? false;
     diffSurroundingEffectExpanded = _prefs.getBool('diffSurroundingEffectExpanded') ?? false;
+    deviceSimulationExpanded = _prefs.getBool('deviceSimulationExpanded') ?? false;
     loadingImagePath = _prefs.getString('loadingImagePath');
 
     final blacklistJson = _prefs.getString('appBlacklist');
@@ -422,6 +434,7 @@ class DSPControllerViewModel {
     await _prefs.setBool('reverbExpanded', reverbExpanded);
     await _prefs.setBool('scriptExpanded', scriptExpanded);
     await _prefs.setBool('diffSurroundingEffectExpanded', diffSurroundingEffectExpanded);
+    await _prefs.setBool('deviceSimulationExpanded', deviceSimulationExpanded);
     await _prefs.setString('appBlacklist', jsonEncode(appBlacklist.toList()));
     await _prefs.setString('loadingImagePath', loadingImagePath ?? '');
   }
@@ -529,6 +542,11 @@ class DSPControllerViewModel {
     await _invokeMethod('setMasterEnabled', enabled);
   }
 
+  Future<String?> readAssetFile(String relPath) async {
+    final result = await _invokeMethodWithResult<String>('readAssetFile', {'relPath': relPath});
+    return result.fold((_) => null, (text) => text);
+  }
+
   Future<void> _fetchAppVersion() async {
     final result = await _invokeMethodWithResult<String>('getAppVersion');
     result.fold(
@@ -633,6 +651,9 @@ class DSPControllerViewModel {
         break;
       case 'diffSurroundingEffect':
         diffSurroundingEffectExpanded = !diffSurroundingEffectExpanded;
+        break;
+      case 'deviceSimulation':
+        deviceSimulationExpanded = !deviceSimulationExpanded;
         break;
     }
     await _saveSettings();

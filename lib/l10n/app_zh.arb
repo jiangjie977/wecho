@@ -160,5 +160,21 @@
     "presetClassical": "古典",
     "presetElectronic": "电子",
     "presetAcoustic": "原声",
-    "presetCustom": "自定义"
+    "presetCustom": "自定义",
+    "deviceSimulationEffect": "设备模拟",
+    "deviceSimulationEffectDesc": "将当前耳机校正到目标耳机的频响",
+    "currentHeadphone": "当前耳机",
+    "simulateHeadphone": "模拟耳机",
+    "currentHeadphoneHint": "必填，输入耳机名称前缀以匹配候选",
+    "simulateHeadphoneHint": "选填，输入耳机名称前缀以匹配候选",
+    "deviceUnavailable": "未匹配到索引中的设备",
+    "load": "加载",
+    "unlock": "解锁",
+    "unlockDesc": "解锁后可选择 rig/type 与当前耳机不同的耳机",
+    "unlockImperfect": "解除无法完美模拟的耳机候选项",
+    "randomSimulate": "随机模拟",
+    "cantPerfectlySimulate": "无法完美模拟",
+    "deviceSimulationHint": "仅输入当前耳机表示将其校正为平直频响",
+    "actualFreqResponse": "实际频响",
+    "indexLoadFailed": "无法加载设备索引"
 }

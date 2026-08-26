@@ -238,11 +238,26 @@ class _DSPControllerState extends State<DSPController> {
                 onToggle: (v) => _viewModel.update(ParamID.lookAheadSoftLimitEffectEnabled, v),
               ),
               const SizedBox(height: 16),
+              // ── Device Simulation ──
+              GenericControlCard(
+                icon: Icons.headphones,
+                title: l10n.deviceSimulationEffect,
+                subtitle: _viewModel.get<String>(ParamID.deviceSimulationEffectConfig).split('\n').last.split('/').last.split('.csv').first,
+                description: l10n.deviceSimulationEffectDesc,
+                enabled: _viewModel.get<bool>(ParamID.deviceSimulationEffectEnabled),
+                expanded: _viewModel.deviceSimulationExpanded,
+                onToggleExpand: () => _viewModel.toggleExpanded('deviceSimulation'),
+                onToggle: (v) => _viewModel.update(ParamID.deviceSimulationEffectEnabled, v),
+                children: [
+                  DeviceSimulationCard(viewModel: _viewModel),
+                ],
+              ),
+              const SizedBox(height: 16),
               // ── Compressor ──
               GenericControlCard(
                 icon: Icons.compress,
                 title: l10n.compressor,
-                subtitle: '${_viewModel.get<int>(ParamID.compressorEffectThreshold).toDouble().toStringAsFixed(2)}dB',
+                subtitle: '${_viewModel.get<int>(ParamID.compressorEffectThreshold).toDouble().toStringAsFixed(2)} dB',
                 description: l10n.compressorDesc,
                 enabled: _viewModel.get<bool>(ParamID.compressorEffectEnabled),
                 expanded: _viewModel.compressorExpanded,
@@ -287,9 +302,11 @@ class _DSPControllerState extends State<DSPController> {
                 ],
               ),
               const SizedBox(height: 16),
+              // ── Diff Surrounding ──
               GenericControlCard(
                 icon: Icons.equalizer,
                 title: l10n.diffSurroundingEffect,
+                subtitle: '${_viewModel.get<int>(ParamID.diffSurroundingEffectDelayMs)} ms',
                 description: l10n.diffSurroundingEffectDesc,
                 enabled: _viewModel.get<bool>(ParamID.diffSurroundingEffectEnabled),
                 onToggle: (v) => _viewModel.update(ParamID.diffSurroundingEffectEnabled, v),
@@ -405,6 +422,7 @@ class _DSPControllerState extends State<DSPController> {
               GenericControlCard(
                 icon: Icons.waves,
                 title: l10n.convolve,
+                subtitle: _viewModel.get<String>(ParamID.convolveEffectIrPath).split('/').last,
                 description: l10n.convolveDesc,
                 enabled: _viewModel.get<bool>(ParamID.convolveEffectEnabled),
                 expanded: _viewModel.convolveExpanded,
@@ -451,7 +469,7 @@ class _DSPControllerState extends State<DSPController> {
               GenericControlCard(
                 icon: Icons.filter_list,
                 title: l10n.lowcat,
-                subtitle: '${_viewModel.get<int>(ParamID.lowcatEffectCutoffFrequency)}Hz',
+                subtitle: '${_viewModel.get<int>(ParamID.lowcatEffectCutoffFrequency)} Hz',
                 description: l10n.lowcatDesc,
                 enabled: _viewModel.get<bool>(ParamID.lowcatEffectEnabled),
                 expanded: _viewModel.lowcatExpanded,
@@ -473,6 +491,7 @@ class _DSPControllerState extends State<DSPController> {
                 icon: Icons.graphic_eq,
                 title: l10n.equalizer,
                 description: l10n.equalizerDesc,
+                subtitle: _viewModel.get<String>(ParamID.iirEqualizerEffectConfig).split('\n').first,
                 enabled: _viewModel.get<bool>(ParamID.iirEqualizerEffectEnabled),
                 expanded: _viewModel.equalizerExpanded,
                 onToggleExpand: () => _viewModel.toggleExpanded('equalizer'),
@@ -491,7 +510,7 @@ class _DSPControllerState extends State<DSPController> {
               GenericControlCard(
                 icon: Icons.surround_sound,
                 title: l10n.virtualBass,
-                subtitle: '${_viewModel.get<int>(ParamID.virtualbassEffectEnvelopeRate)}Hz',
+                subtitle: '${_viewModel.get<int>(ParamID.virtualbassEffectEnvelopeRate)} Hz',
                 description: l10n.virtualBassDesc,
                 enabled: _viewModel.get<bool>(ParamID.virtualbassEffectEnabled),
                 expanded: _viewModel.virtualBassExpanded,
