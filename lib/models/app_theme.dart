@@ -1,18 +1,19 @@
-/// App Theme definitions - ported from RootlessJamesDSP
-/// 9 themes: Default, Monet (Material You), Green Apple, Honey,
-/// Strawberry Daiquiri, Teal Turquoise, Tidal Wave, Yin Yang, Yotsuba
+/// App Theme definitions
+/// Generated from wecho主题配色方案表.xlsx
+/// Themes: Default, Fresh Green, Amber Gold, Rose Red,
+/// Night Black, Coral Magenta, Lavender Purple, Teal Cyan, Terracotta
 import 'package:flutter/material.dart';
 
 enum AppTheme {
   defaultTheme('默认', 'Default'),
-  monet('动态颜色', 'Monet (Material You)'),
-  greenApple('青苹果', 'Green Apple'),
-  honey('蜂蜜', 'Honey'),
-  strawberry('草莓代基里', 'Strawberry Daiquiri'),
-  tealTurquoise('绿松石', 'Teal Turquoise'),
-  tidalWave('潮汐', 'Tidal Wave'),
-  yinYang('阴阳', 'Yin & Yang'),
-  yotsuba('四叶', 'Yotsuba');
+  greenApple('清新绿', 'Fresh Green'),
+  honey('琥珀金', 'Amber Gold'),
+  strawberry('玫瑰红', 'Rose Red'),
+  yinYang('暗夜黑', 'Night Black'),
+  coralMagenta('珊瑚洋红', 'Coral Magenta'),
+  lavenderPurple('薰衣草紫', 'Lavender Purple'),
+  tealCyan('松石绿', 'Turquoise'),
+  terracotta('落日橘', 'Sunset Orange');
 
   final String labelZh;
   final String labelEn;
@@ -38,21 +39,19 @@ class AppThemeBuilder {
         return _honeyLight();
       case AppTheme.strawberry:
         return _strawberryLight();
-      case AppTheme.tealTurquoise:
-        return _tealTurquoiseLight();
-      case AppTheme.tidalWave:
-        return _tidalWaveLight();
       case AppTheme.yinYang:
         return _yinYangLight();
-      case AppTheme.yotsuba:
-        return _yotsubaLight();
+      case AppTheme.coralMagenta:
+        return _coralMagentaLight();
+      case AppTheme.lavenderPurple:
+        return _lavenderPurpleLight();
+      case AppTheme.tealCyan:
+        return _tealCyanLight();
+      case AppTheme.terracotta:
+        return _terracottaLight();
       case AppTheme.defaultTheme:
-      case AppTheme.monet:
       default:
-        return ColorScheme.fromSeed(
-          seedColor: const Color(0xFF448AFF),
-          brightness: Brightness.light,
-        );
+        return _defaultThemeLight();
     }
   }
 
@@ -64,25 +63,34 @@ class AppThemeBuilder {
         return _honeyDark();
       case AppTheme.strawberry:
         return _strawberryDark();
-      case AppTheme.tealTurquoise:
-        return _tealTurquoiseDark();
-      case AppTheme.tidalWave:
-        return _tidalWaveDark();
       case AppTheme.yinYang:
         return _yinYangDark();
-      case AppTheme.yotsuba:
-        return _yotsubaDark();
+      case AppTheme.coralMagenta:
+        return _coralMagentaDark();
+      case AppTheme.lavenderPurple:
+        return _lavenderPurpleDark();
+      case AppTheme.tealCyan:
+        return _tealCyanDark();
+      case AppTheme.terracotta:
+        return _terracottaDark();
       case AppTheme.defaultTheme:
-      case AppTheme.monet:
       default:
-        return ColorScheme.fromSeed(
-          seedColor: const Color(0xFF448AFF),
-          brightness: Brightness.dark,
-        );
+        return _defaultThemeDark();
     }
   }
 
-  // === Green Apple ===
+  // === 默认 (Default) 蓝色调===
+  static ColorScheme _defaultThemeLight() => ColorScheme.fromSeed(
+        seedColor: const Color(0xFF448AFF),
+        brightness: Brightness.light,
+      );
+
+  static ColorScheme _defaultThemeDark() => ColorScheme.fromSeed(
+        seedColor: const Color(0xFF448AFF),
+        brightness: Brightness.dark,
+      );
+
+  // === 清新绿 (Fresh Green) ===
   static ColorScheme _greenAppleLight() => const ColorScheme(
         brightness: Brightness.light,
         primary: Color(0xFF006D2F),
@@ -145,7 +153,7 @@ class AppThemeBuilder {
         inversePrimary: Color(0xFF006D2F),
       );
 
-  // === Honey ===
+  // === 琥珀金 (Amber Gold) ===
   static ColorScheme _honeyLight() => const ColorScheme(
         brightness: Brightness.light,
         primary: Color(0xFF885200),
@@ -208,172 +216,98 @@ class AppThemeBuilder {
         inversePrimary: Color(0xFF885200),
       );
 
-  // === Strawberry Daiquiri ===
+  // === 玫瑰红 (Rose Red) ===
   static ColorScheme _strawberryLight() => const ColorScheme(
         brightness: Brightness.light,
         primary: Color(0xFFB61E40),
         onPrimary: Color(0xFFFFFFFF),
-        primaryContainer: Color(0xFFFFDADD),
-        onPrimaryContainer: Color(0xFF40000D),
+        primaryContainer: Color(0xFFF61E40),
+        onPrimaryContainer: Color(0xFF001945),
         secondary: Color(0xFFB61E40),
         onSecondary: Color(0xFFFFFFFF),
-        secondaryContainer: Color(0xFFFFDADD),
-        onSecondaryContainer: Color(0xFF40000D),
-        tertiary: Color(0xFF775930),
+        secondaryContainer: Color(0xFFF61E40),
+        onSecondaryContainer: Color(0xFF141B2C),
+        tertiary: Color(0xFF715573),
         onTertiary: Color(0xFFFFFFFF),
-        tertiaryContainer: Color(0xFFFFDDB1),
-        onTertiaryContainer: Color(0xFF2A1800),
+        tertiaryContainer: Color(0xFFF8D8FF),
+        onTertiaryContainer: Color(0xFF291331),
         error: Color(0xFFBA1A1A),
         onError: Color(0xFFFFFFFF),
         errorContainer: Color(0xFFFFDAD6),
         onErrorContainer: Color(0xFF410002),
-        background: Color(0xFFFCFCFC),
-        onBackground: Color(0xFF201A1A),
-        surface: Color(0xFFFCFCFC),
-        onSurface: Color(0xFF201A1A),
-        surfaceVariant: Color(0xFFF4DDDD),
-        onSurfaceVariant: Color(0xFF534344),
-        outline: Color(0xFF857374),
-        outlineVariant: Color(0xFFD7C1C2),
-        inverseSurface: Color(0xFF362F2F),
-        onInverseSurface: Color(0xFFFBEDED),
+        background: Color(0xFFFBFDF7),
+        onBackground: Color(0xFF1A1C19),
+        surface: Color(0xFFFBFDF7),
+        onSurface: Color(0xFF1A1C19),
+        surfaceVariant: Color(0xFFDDE5DA),
+        onSurfaceVariant: Color(0xFF414941),
+        outline: Color(0xFF717970),
+        outlineVariant: Color(0xFFC1C9BE),
+        inverseSurface: Color(0xFF2F312E),
+        onInverseSurface: Color(0xFFF0F2EC),
         inversePrimary: Color(0xFFFFB2B9),
       );
 
   static ColorScheme _strawberryDark() => const ColorScheme(
         brightness: Brightness.dark,
         primary: Color(0xFFFFB2B9),
-        onPrimary: Color(0xFF630019),
-        primaryContainer: Color(0xFF8E0527),
-        onPrimaryContainer: Color(0xFFFFDADD),
+        onPrimary: Color(0xFF3D0018),
+        primaryContainer: Color(0xF3D61E40),
+        onPrimaryContainer: Color(0xFFFFFFFF),
         secondary: Color(0xFFFFB2B9),
-        onSecondary: Color(0xFF630019),
-        secondaryContainer: Color(0xFF8E0527),
-        onSecondaryContainer: Color(0xFFFFDADD),
-        tertiary: Color(0xFFE7C189),
-        onTertiary: Color(0xFF442C07),
-        tertiaryContainer: Color(0xFF5D421B),
-        onTertiaryContainer: Color(0xFFFFDDB1),
+        onSecondary: Color(0xFF3D0018),
+        secondaryContainer: Color(0xF3D61E40),
+        onSecondaryContainer: Color(0xFFFFFFFF),
+        tertiary: Color(0xFFDEBCDF),
+        onTertiary: Color(0xFF402843),
+        tertiaryContainer: Color(0xFF4A375C),
+        onTertiaryContainer: Color(0xFFFFFFFF),
         error: Color(0xFFFFB4AB),
         onError: Color(0xFF690005),
         errorContainer: Color(0xFF93000A),
-        onErrorContainer: Color(0xFFFFDAD6),
-        background: Color(0xFF201A1A),
-        onBackground: Color(0xFFECE0E0),
-        surface: Color(0xFF201A1A),
-        onSurface: Color(0xFFECE0E0),
-        surfaceVariant: Color(0xFF534344),
-        onSurfaceVariant: Color(0xFFD7C1C2),
-        outline: Color(0xFFA08C8D),
-        outlineVariant: Color(0xFF534344),
-        inverseSurface: Color(0xFFECE0E0),
-        onInverseSurface: Color(0xFF201A1A),
+        onErrorContainer: Color(0xFFFFFFFF),
+        background: Color(0xFF1A1C19),
+        onBackground: Color(0xFFE2E3DE),
+        surface: Color(0xFF1A1C19),
+        onSurface: Color(0xFFE2E3DE),
+        surfaceVariant: Color(0xFF414941),
+        onSurfaceVariant: Color(0xFFC1C9BE),
+        outline: Color(0xFF8B9389),
+        outlineVariant: Color(0xFF414941),
+        inverseSurface: Color(0xFFE2E3DE),
+        onInverseSurface: Color(0xFF1A1C19),
         inversePrimary: Color(0xFFB61E40),
       );
 
-  // === Teal Turquoise ===
-  static ColorScheme _tealTurquoiseLight() => ColorScheme.fromSeed(
-        seedColor: const Color(0xFF00897B),
-        brightness: Brightness.light,
-      );
-
-  static ColorScheme _tealTurquoiseDark() => ColorScheme.fromSeed(
-        seedColor: const Color(0xFF00897B),
-        brightness: Brightness.dark,
-      );
-
-  // === Tidal Wave ===
-  static ColorScheme _tidalWaveLight() => const ColorScheme(
-        brightness: Brightness.light,
-        primary: Color(0xFF006780),
-        onPrimary: Color(0xFFFFFFFF),
-        primaryContainer: Color(0xFFB4D4DF),
-        onPrimaryContainer: Color(0xFF001f28),
-        secondary: Color(0xFF006780),
-        onSecondary: Color(0xFFFFFFFF),
-        secondaryContainer: Color(0xFFB8EAFF),
-        onSecondaryContainer: Color(0xFF001f28),
-        tertiary: Color(0xFF4E6230),
-        onTertiary: Color(0xFFFFFFFF),
-        tertiaryContainer: Color(0xFFCFE7A8),
-        onTertiaryContainer: Color(0xFF151E00),
-        error: Color(0xFFBA1A1A),
-        onError: Color(0xFFFFFFFF),
-        errorContainer: Color(0xFFFFDAD6),
-        onErrorContainer: Color(0xFF410002),
-        background: Color(0xFFFDFBFF),
-        onBackground: Color(0xFF001c3b),
-        surface: Color(0xFFFDFBFF),
-        onSurface: Color(0xFF001c3b),
-        surfaceVariant: Color(0xFFDCE4E8),
-        onSurfaceVariant: Color(0xFF40484c),
-        outline: Color(0xFF70787c),
-        outlineVariant: Color(0xFFC0C8CC),
-        inverseSurface: Color(0xFF020400),
-        onInverseSurface: Color(0xFFFFE3C4),
-        inversePrimary: Color(0xFFB4ECFF),
-      );
-
-  static ColorScheme _tidalWaveDark() => const ColorScheme(
-        brightness: Brightness.dark,
-        primary: Color(0xFF4FD8EE),
-        onPrimary: Color(0xFF003644),
-        primaryContainer: Color(0xFF004E61),
-        onPrimaryContainer: Color(0xFF9FF0FF),
-        secondary: const Color(0xFF4FD8EE),
-        onSecondary: Color(0xFF003644),
-        secondaryContainer: Color(0xFF004E61),
-        onSecondaryContainer: Color(0xFF9FF0FF),
-        tertiary: Color(0xFFB4CB8D),
-        onTertiary: Color(0xFF273408),
-        tertiaryContainer: Color(0xFF3A4A1C),
-        onTertiaryContainer: Color(0xFFCFE7A8),
-        error: Color(0xFFFFB4AB),
-        onError: Color(0xFF690005),
-        errorContainer: Color(0xFF93000A),
-        onErrorContainer: Color(0xFFFFDAD6),
-        background: Color(0xFF001c3b),
-        onBackground: Color(0xFFD6E3FF),
-        surface: Color(0xFF001c3b),
-        onSurface: Color(0xFFD6E3FF),
-        surfaceVariant: Color(0xFF40484c),
-        onSurfaceVariant: Color(0xFFC0C8CC),
-        outline: Color(0xFF8A9296),
-        outlineVariant: Color(0xFF40484c),
-        inverseSurface: Color(0xFFD6E3FF),
-        onInverseSurface: Color(0xFF001c3b),
-        inversePrimary: Color(0xFF006780),
-      );
-
-  // === Yin Yang ===
+  // === 暗夜黑 (Night Black) ===
   static ColorScheme _yinYangLight() => const ColorScheme(
         brightness: Brightness.light,
         primary: Color(0xFF000000),
         onPrimary: Color(0xFFFFFFFF),
-        primaryContainer: Color(0xFF000000),
-        onPrimaryContainer: Color(0xFFFFFFFF),
+        primaryContainer: Color(0xFFF00000),
+        onPrimaryContainer: Color(0xFF001945),
         secondary: Color(0xFF000000),
         onSecondary: Color(0xFFFFFFFF),
-        secondaryContainer: Color(0xFFAAAAAA),
-        onSecondaryContainer: Color(0xFF0C0C0C),
-        tertiary: Color(0xFFFFFFFF),
-        onTertiary: Color(0xFF000000),
-        tertiaryContainer: Color(0xFFD8E2FF),
-        onTertiaryContainer: Color(0xFF001947),
+        secondaryContainer: Color(0xFFF00000),
+        onSecondaryContainer: Color(0xFF141B2C),
+        tertiary: Color(0xFF715573),
+        onTertiary: Color(0xFFFFFFFF),
+        tertiaryContainer: Color(0xFFF8D8FF),
+        onTertiaryContainer: Color(0xFF291331),
         error: Color(0xFFBA1A1A),
         onError: Color(0xFFFFFFFF),
         errorContainer: Color(0xFFFFDAD6),
         onErrorContainer: Color(0xFF410002),
-        background: Color(0xFFFDFDFD),
-        onBackground: Color(0xFF222222),
-        surface: Color(0xFFFDFDFD),
-        onSurface: Color(0xFF222222),
-        surfaceVariant: Color(0xFFCCCCCC),
-        onSurfaceVariant: Color(0xFF515151),
-        outline: Color(0xFF838383),
-        outlineVariant: Color(0xFFC4C4C4),
-        inverseSurface: Color(0xFF333333),
-        onInverseSurface: Color(0xFFF4F4F4),
+        background: Color(0xFFFBFDF7),
+        onBackground: Color(0xFF1A1C19),
+        surface: Color(0xFFFBFDF7),
+        onSurface: Color(0xFF1A1C19),
+        surfaceVariant: Color(0xFFDDE5DA),
+        onSurfaceVariant: Color(0xFF414941),
+        outline: Color(0xFF717970),
+        outlineVariant: Color(0xFFC1C9BE),
+        inverseSurface: Color(0xFF2F312E),
+        onInverseSurface: Color(0xFFF0F2EC),
         inversePrimary: Color(0xFF555555),
       );
 
@@ -381,93 +315,282 @@ class AppThemeBuilder {
         brightness: Brightness.dark,
         primary: Color(0xFFFFFFFF),
         onPrimary: Color(0xFF000000),
-        primaryContainer: Color(0xFFFFFFFF),
-        onPrimaryContainer: Color(0xFF000000),
+        primaryContainer: Color(0xF3D00000),
+        onPrimaryContainer: Color(0xFFFFFFFF),
         secondary: Color(0xFFFFFFFF),
-        onSecondary: Color(0xFF000000),
-        secondaryContainer: Color(0xFF555555),
-        onSecondaryContainer: Color(0xFFF0F0F0),
-        tertiary: Color(0xFF000000),
-        onTertiary: Color(0xFFFFFFFF),
-        tertiaryContainer: Color(0xFF273055),
-        onTertiaryContainer: Color(0xFFD8E2FF),
+        onSecondary: Color(0xFF3D0018),
+        secondaryContainer: Color(0xF3D00000),
+        onSecondaryContainer: Color(0xFFFFFFFF),
+        tertiary: Color(0xFFDEBCDF),
+        onTertiary: Color(0xFF402843),
+        tertiaryContainer: Color(0xFF4A375C),
+        onTertiaryContainer: Color(0xFFFFFFFF),
         error: Color(0xFFFFB4AB),
         onError: Color(0xFF690005),
         errorContainer: Color(0xFF93000A),
-        onErrorContainer: Color(0xFFFFDAD6),
-        background: Color(0xFF0D0D0D),
-        onBackground: Color(0xFFE5E5E5),
-        surface: Color(0xFF0D0D0D),
-        onSurface: Color(0xFFE5E5E5),
-        surfaceVariant: Color(0xFF333333),
-        onSurfaceVariant: Color(0xFFC4C4C4),
-        outline: Color(0xFF8E8E8E),
-        outlineVariant: Color(0xFF333333),
-        inverseSurface: Color(0xFFE5E5E5),
-        onInverseSurface: Color(0xFF0D0D0D),
+        onErrorContainer: Color(0xFFFFFFFF),
+        background: Color(0xFF1A1C19),
+        onBackground: Color(0xFFE2E3DE),
+        surface: Color(0xFF1A1C19),
+        onSurface: Color(0xFFE2E3DE),
+        surfaceVariant: Color(0xFF414941),
+        onSurfaceVariant: Color(0xFFC1C9BE),
+        outline: Color(0xFF8B9389),
+        outlineVariant: Color(0xFF414941),
+        inverseSurface: Color(0xFFE2E3DE),
+        onInverseSurface: Color(0xFF1A1C19),
         inversePrimary: Color(0xFFAAAAAA),
       );
 
-  // === Yotsuba ===
-  static ColorScheme _yotsubaLight() => const ColorScheme(
+  // === 珊瑚洋红 (Coral Magenta) ===
+  static ColorScheme _coralMagentaLight() => const ColorScheme(
         brightness: Brightness.light,
-        primary: Color(0xFFAE3200),
+        primary: Color(0xFFD9376E),
         onPrimary: Color(0xFFFFFFFF),
-        primaryContainer: Color(0xFFFBC6B6),
-        onPrimaryContainer: Color(0xFF3A0B00),
-        secondary: Color(0xFFA63B16),
+        primaryContainer: Color(0xFFF9376E),
+        onPrimaryContainer: Color(0xFF001945),
+        secondary: Color(0xFFD9376E),
         onSecondary: Color(0xFFFFFFFF),
-        secondaryContainer: Color(0xFFFFDBD0),
-        onSecondaryContainer: Color(0xFF3A0B00),
-        tertiary: Color(0xFF705D00),
+        secondaryContainer: Color(0xFFF9376E),
+        onSecondaryContainer: Color(0xFF141B2C),
+        tertiary: Color(0xFF715573),
         onTertiary: Color(0xFFFFFFFF),
-        tertiaryContainer: Color(0xFFFFE173),
-        onTertiaryContainer: Color(0xFF221B00),
+        tertiaryContainer: Color(0xFFF8D8FF),
+        onTertiaryContainer: Color(0xFF291331),
         error: Color(0xFFBA1A1A),
         onError: Color(0xFFFFFFFF),
         errorContainer: Color(0xFFFFDAD6),
         onErrorContainer: Color(0xFF410002),
-        background: Color(0xFFFFFBFF),
-        onBackground: Color(0xFF3D0700),
-        surface: Color(0xFFFFFBFF),
-        onSurface: Color(0xFF3D0700),
-        surfaceVariant: Color(0xFFF5DED7),
-        onSurfaceVariant: Color(0xFF53433F),
-        outline: Color(0xFF85736E),
-        outlineVariant: Color(0xFFD8C2BC),
-        inverseSurface: Color(0xFF5E1605),
-        onInverseSurface: Color(0xFFFFEDE9),
-        inversePrimary: Color(0xFFFFB59E),
+        background: Color(0xFFFBFDF7),
+        onBackground: Color(0xFF1A1C19),
+        surface: Color(0xFFFBFDF7),
+        onSurface: Color(0xFF1A1C19),
+        surfaceVariant: Color(0xFFDDE5DA),
+        onSurfaceVariant: Color(0xFF414941),
+        outline: Color(0xFF717970),
+        outlineVariant: Color(0xFFC1C9BE),
+        inverseSurface: Color(0xFF2F312E),
+        onInverseSurface: Color(0xFFF0F2EC),
+        inversePrimary: Color(0xFFFFB1C4),
       );
 
-  static ColorScheme _yotsubaDark() => const ColorScheme(
+  static ColorScheme _coralMagentaDark() => const ColorScheme(
         brightness: Brightness.dark,
-        primary: Color(0xFFFFB59E),
-        onPrimary: Color(0xFF5C1800),
-        primaryContainer: Color(0xFF7F2300),
-        onPrimaryContainer: Color(0xFFFBC6B6),
-        secondary: Color(0xFFFFB59E),
-        onSecondary: Color(0xFF5C1800),
-        secondaryContainer: Color(0xFF7F2300),
-        onSecondaryContainer: Color(0xFFFFDBD0),
-        tertiary: Color(0xFFDEC46C),
-        onTertiary: Color(0xFF3A3000),
-        tertiaryContainer: Color(0xFF544600),
-        onTertiaryContainer: Color(0xFFFFE173),
+        primary: Color(0xFFFFB1C4),
+        onPrimary: Color(0xFF3D0018),
+        primaryContainer: Color(0xF3D9376E),
+        onPrimaryContainer: Color(0xFFFFFFFF),
+        secondary: Color(0xFFFFB1C4),
+        onSecondary: Color(0xFF3D0018),
+        secondaryContainer: Color(0xF3D9376E),
+        onSecondaryContainer: Color(0xFFFFFFFF),
+        tertiary: Color(0xFFDEBCDF),
+        onTertiary: Color(0xFF402843),
+        tertiaryContainer: Color(0xFF4A375C),
+        onTertiaryContainer: Color(0xFFFFFFFF),
         error: Color(0xFFFFB4AB),
         onError: Color(0xFF690005),
         errorContainer: Color(0xFF93000A),
-        onErrorContainer: Color(0xFFFFDAD6),
-        background: Color(0xFF3D0700),
-        onBackground: Color(0xFFFFDAD3),
-        surface: Color(0xFF3D0700),
-        onSurface: Color(0xFFFFDAD3),
-        surfaceVariant: Color(0xFF53433F),
-        onSurfaceVariant: Color(0xFFD8C2BC),
-        outline: Color(0xFFA08C87),
-        outlineVariant: Color(0xFF53433F),
-        inverseSurface: Color(0xFFFFDAD3),
-        onInverseSurface: Color(0xFF3D0700),
-        inversePrimary: Color(0xFFAE3200),
+        onErrorContainer: Color(0xFFFFFFFF),
+        background: Color(0xFF1A1C19),
+        onBackground: Color(0xFFE2E3DE),
+        surface: Color(0xFF1A1C19),
+        onSurface: Color(0xFFE2E3DE),
+        surfaceVariant: Color(0xFF414941),
+        onSurfaceVariant: Color(0xFFC1C9BE),
+        outline: Color(0xFF8B9389),
+        outlineVariant: Color(0xFF414941),
+        inverseSurface: Color(0xFFE2E3DE),
+        onInverseSurface: Color(0xFF1A1C19),
+        inversePrimary: Color(0xFFD9376E),
+      );
+
+  // === 薰衣草紫 (Lavender Purple) ===
+  static ColorScheme _lavenderPurpleLight() => const ColorScheme(
+        brightness: Brightness.light,
+        primary: Color(0xFF6750A4),
+        onPrimary: Color(0xFFFFFFFF),
+        primaryContainer: Color(0xFFF750A4),
+        onPrimaryContainer: Color(0xFF001945),
+        secondary: Color(0xFF6750A4),
+        onSecondary: Color(0xFFFFFFFF),
+        secondaryContainer: Color(0xFFF750A4),
+        onSecondaryContainer: Color(0xFF141B2C),
+        tertiary: Color(0xFF715573),
+        onTertiary: Color(0xFFFFFFFF),
+        tertiaryContainer: Color(0xFFF8D8FF),
+        onTertiaryContainer: Color(0xFF291331),
+        error: Color(0xFFBA1A1A),
+        onError: Color(0xFFFFFFFF),
+        errorContainer: Color(0xFFFFDAD6),
+        onErrorContainer: Color(0xFF410002),
+        background: Color(0xFFFBFDF7),
+        onBackground: Color(0xFF1A1C19),
+        surface: Color(0xFFFBFDF7),
+        onSurface: Color(0xFF1A1C19),
+        surfaceVariant: Color(0xFFDDE5DA),
+        onSurfaceVariant: Color(0xFF414941),
+        outline: Color(0xFF717970),
+        outlineVariant: Color(0xFFC1C9BE),
+        inverseSurface: Color(0xFF2F312E),
+        onInverseSurface: Color(0xFFF0F2EC),
+        inversePrimary: Color(0xFFD0BCFF),
+      );
+
+  static ColorScheme _lavenderPurpleDark() => const ColorScheme(
+        brightness: Brightness.dark,
+        primary: Color(0xFFD0BCFF),
+        onPrimary: Color(0xFF3D0018),
+        primaryContainer: Color(0xF3D750A4),
+        onPrimaryContainer: Color(0xFFFFFFFF),
+        secondary: Color(0xFFD0BCFF),
+        onSecondary: Color(0xFF3D0018),
+        secondaryContainer: Color(0xF3D750A4),
+        onSecondaryContainer: Color(0xFFFFFFFF),
+        tertiary: Color(0xFFDEBCDF),
+        onTertiary: Color(0xFF402843),
+        tertiaryContainer: Color(0xFF4A375C),
+        onTertiaryContainer: Color(0xFFFFFFFF),
+        error: Color(0xFFFFB4AB),
+        onError: Color(0xFF690005),
+        errorContainer: Color(0xFF93000A),
+        onErrorContainer: Color(0xFFFFFFFF),
+        background: Color(0xFF1A1C19),
+        onBackground: Color(0xFFE2E3DE),
+        surface: Color(0xFF1A1C19),
+        onSurface: Color(0xFFE2E3DE),
+        surfaceVariant: Color(0xFF414941),
+        onSurfaceVariant: Color(0xFFC1C9BE),
+        outline: Color(0xFF8B9389),
+        outlineVariant: Color(0xFF414941),
+        inverseSurface: Color(0xFFE2E3DE),
+        onInverseSurface: Color(0xFF1A1C19),
+        inversePrimary: Color(0xFF6750A4),
+      );
+
+  // === 青碧色 (Teal Cyan) ===
+  static ColorScheme _tealCyanLight() => const ColorScheme(
+        brightness: Brightness.light,
+        primary: Color(0xFF006A6A),
+        onPrimary: Color(0xFFFFFFFF),
+        primaryContainer: Color(0xFF9BF0F0),
+        onPrimaryContainer: Color(0xFF002020),
+        secondary: Color(0xFF4A6363),
+        onSecondary: Color(0xFFFFFFFF),
+        secondaryContainer: Color(0xFFCCE8E8),
+        onSecondaryContainer: Color(0xFF051F1F),
+        tertiary: Color(0xFF4E6089),
+        onTertiary: Color(0xFFFFFFFF),
+        tertiaryContainer: Color(0xFFD6E2FF),
+        onTertiaryContainer: Color(0xFF061C39),
+        error: Color(0xFFBA1A1A),
+        onError: Color(0xFFFFFFFF),
+        errorContainer: Color(0xFFFFDAD6),
+        onErrorContainer: Color(0xFF410002),
+        background: Color(0xFFFAFDFD),
+        onBackground: Color(0xFF191C1C),
+        surface: Color(0xFFFAFDFD),
+        onSurface: Color(0xFF191C1C),
+        surfaceVariant: Color(0xFFDAE4E3),
+        onSurfaceVariant: Color(0xFF3F4948),
+        outline: Color(0xFF6F7978),
+        outlineVariant: Color(0xFFBEC9C7),
+        inverseSurface: Color(0xFF2D3131),
+        onInverseSurface: Color(0xFFEFF1F0),
+        inversePrimary: Color(0xFF4ED3D3),
+      );
+
+  static ColorScheme _tealCyanDark() => const ColorScheme(
+        brightness: Brightness.dark,
+        primary: Color(0xFF4ED3D3),
+        onPrimary: Color(0xFF003737),
+        primaryContainer: Color(0xFF005050),
+        onPrimaryContainer: Color(0xFF9BF0F0),
+        secondary: Color(0xFFB0CCCB),
+        onSecondary: Color(0xFF163434),
+        secondaryContainer: Color(0xFF304B4B),
+        onSecondaryContainer: Color(0xFFCCE8E8),
+        tertiary: Color(0xFFB6C6FF),
+        onTertiary: Color(0xFF1D3057),
+        tertiaryContainer: Color(0xFF354870),
+        onTertiaryContainer: Color(0xFFD6E2FF),
+        error: Color(0xFFBA1A1A),
+        onError: Color(0xFFFFFFFF),
+        errorContainer: Color(0xFFFFDAD6),
+        onErrorContainer: Color(0xFF410002),
+        background: Color(0xFF191C1C),
+        onBackground: Color(0xFFE0E3E2),
+        surface: Color(0xFF191C1C),
+        onSurface: Color(0xFFE0E3E2),
+        surfaceVariant: Color(0xFF3F4948),
+        onSurfaceVariant: Color(0xFFBEC9C7),
+        outline: Color(0xFF899392),
+        outlineVariant: Color(0xFF3F4948),
+        inverseSurface: Color(0xFFE0E3E2),
+        onInverseSurface: Color(0xFF191C1C),
+        inversePrimary: Color(0xFF006A6A),
+      );
+
+  // === 赤陶色 (Terracotta) ===
+  static ColorScheme _terracottaLight() => const ColorScheme(
+        brightness: Brightness.light,
+        primary: Color(0xFF8C4A2F),
+        onPrimary: Color(0xFFFFFFFF),
+        primaryContainer: Color(0xFFFFDBCB),
+        onPrimaryContainer: Color(0xFF350D00),
+        secondary: Color(0xFF775748),
+        onSecondary: Color(0xFFFFFFFF),
+        secondaryContainer: Color(0xFFFFDBCB),
+        onSecondaryContainer: Color(0xFF2C150A),
+        tertiary: Color(0xFF665E2F),
+        onTertiary: Color(0xFFFFFFFF),
+        tertiaryContainer: Color(0xFFEDE2A6),
+        onTertiaryContainer: Color(0xFF1F1B00),
+        error: Color(0xFFBA1A1A),
+        onError: Color(0xFFFFFFFF),
+        errorContainer: Color(0xFFFFDAD6),
+        onErrorContainer: Color(0xFF410002),
+        background: Color(0xFFFFF8F5),
+        onBackground: Color(0xFF201A17),
+        surface: Color(0xFFFFF8F5),
+        onSurface: Color(0xFF201A17),
+        surfaceVariant: Color(0xFFF5DED4),
+        onSurfaceVariant: Color(0xFF53443C),
+        outline: Color(0xFF85746B),
+        outlineVariant: Color(0xFFD8C2B8),
+        inverseSurface: Color(0xFF362F2B),
+        onInverseSurface: Color(0xFFFBEEE8),
+        inversePrimary: Color(0xFFFFB596),
+      );
+
+  static ColorScheme _terracottaDark() => const ColorScheme(
+        brightness: Brightness.dark,
+        primary: Color(0xFFFFB596),
+        onPrimary: Color(0xFF511F05),
+        primaryContainer: Color(0xFF6E341A),
+        onPrimaryContainer: Color(0xFFFFDBCB),
+        secondary: Color(0xFFE7BDA9),
+        onSecondary: Color(0xFF442A1D),
+        secondaryContainer: Color(0xFF5D4032),
+        onSecondaryContainer: Color(0xFFFFDBCB),
+        tertiary: Color(0xFFD0C68C),
+        onTertiary: Color(0xFF353005),
+        tertiaryContainer: Color(0xFF4D471A),
+        onTertiaryContainer: Color(0xFFEDE2A6),
+        error: Color(0xFFBA1A1A),
+        onError: Color(0xFFFFFFFF),
+        errorContainer: Color(0xFFFFDAD6),
+        onErrorContainer: Color(0xFF410002),
+        background: Color(0xFF201A17),
+        onBackground: Color(0xFFEDE0DA),
+        surface: Color(0xFF201A17),
+        onSurface: Color(0xFFEDE0DA),
+        surfaceVariant: Color(0xFF53443C),
+        onSurfaceVariant: Color(0xFFD8C2B8),
+        outline: Color(0xFFA08D83),
+        outlineVariant: Color(0xFF53443C),
+        inverseSurface: Color(0xFFEDE0DA),
+        onInverseSurface: Color(0xFF201A17),
+        inversePrimary: Color(0xFF8C4A2F),
       );
 }
