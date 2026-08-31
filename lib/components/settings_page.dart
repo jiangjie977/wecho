@@ -18,6 +18,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:wecho/l10n/app_localizations.dart';
 import 'app_blacklist_page.dart';
@@ -34,15 +35,32 @@ class SettingsPage extends StatefulWidget {
   State<SettingsPage> createState() => _SettingsPageState();
 }
 
-class _SettingsPageState extends State<SettingsPage> {
+class _SettingsPageState extends State<SettingsPage> with WidgetsBindingObserver {
+  double _statusBarHeight = 24; // 手动管理，防止小窗恢复后 SafeArea 异常值
+
+  void _updateStatusBarHeight() {
+    final top = MediaQuery.of(context).padding.top;
+    // 限制在合理范围 0-100dp，超出则用默认 24dp，防止小窗恢复后异常大值
+    _statusBarHeight = (top > 0 && top < 100) ? top : 24;
+  }
   Function()? _previousCallback;
   bool _showHiddenSettings = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _previousCallback = widget.viewModel.onStateChanged;
     widget.viewModel.onStateChanged = _onViewModelStateChanged;
+  }
+
+  @override
+  void didChangeMetrics() {
+    super.didChangeMetrics();
+    if (mounted) {
+      _updateStatusBarHeight();
+      setState(() {});
+    }
   }
 
   void _onViewModelStateChanged() {
@@ -53,6 +71,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     widget.viewModel.onStateChanged = _previousCallback;
     super.dispose();
   }
@@ -61,29 +80,51 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final viewModel = widget.viewModel;
+    _updateStatusBarHeight();
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: GestureDetector(
-          onTap: () => Navigator.of(context).pop(),
-          child: Icon(
-            Icons.arrow_back,
-            color: colorScheme.primary,
+    return MediaQuery.removePadding(
+      removeTop: true,
+      context: context,
+      child: Scaffold(
+      backgroundColor: colorScheme.surface,
+        body: AnnotatedRegion<SystemUiOverlayStyle>(
+          value: SystemUiOverlayStyle(
+            statusBarColor: colorScheme.surface,
+            statusBarIconBrightness: colorScheme.brightness == Brightness.dark ? Brightness.light : Brightness.dark,
+            statusBarBrightness: colorScheme.brightness,
           ),
-        ),
-        title: Text(
-          AppLocalizations.of(context)!.settings,
-          style: TextStyle(
-            color: colorScheme.onSurface,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
-      body: SafeArea(
-        top: false,
+          child: Column(
+            children: [
+              // 手动状态栏高度，限制 0-100dp 合理范围，防止小窗恢复后异常大值
+              SizedBox(height: _statusBarHeight),
+              // 固定高度顶部栏
+              SizedBox(
+                height: 40,
+                child: AppBar(
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  scrolledUnderElevation: 0,
+                  surfaceTintColor: Colors.transparent,
+                  automaticallyImplyLeading: false,
+                  leading: GestureDetector(
+                    onTap: () => Navigator.of(context).pop(),
+                    child: Icon(
+                      Icons.arrow_back,
+                      color: colorScheme.brightness == Brightness.dark ? Colors.white : Colors.black,
+                    ),
+                  ),
+                  title: Text(
+                    AppLocalizations.of(context)!.settings,
+                    style: TextStyle(
+                      color: colorScheme.onSurface,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: SafeArea(
+                  top: false,
         child: ValueListenableBuilder<AppTheme>(
           valueListenable: AppThemeManager.currentTheme,
           builder: (context, _, __) => ValueListenableBuilder<ThemeMode>(
@@ -156,8 +197,13 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
       ),
     ),
-  ),
-);
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildSectionTitle(String title, ColorScheme colorScheme) {
@@ -779,7 +825,7 @@ class _SettingsPageState extends State<SettingsPage> {
               label,
               style: TextStyle(
                 fontSize: 14,
-                color: isSelected ? (isYinYangDark ? Colors.black : colorScheme.primary) : colorScheme.onSurface,
+                color: isYinYangDark ? Colors.white : (isSelected ? colorScheme.primary : colorScheme.onSurface),
                 fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
               ),
             ),
